@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Đà Điểu Chạy</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;touch-action:none;background:#e8e4f0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:8px}
+#wrap{width:100%;max-width:700px;display:flex;flex-direction:column}
+#hud{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#fff;border:1.5px solid #d8d0e0;border-bottom:none;border-radius:16px 16px 0 0;font-size:13px;color:#bbb;gap:8px}
+#score-el{font-size:15px;font-weight:700;color:#2c2a38;letter-spacing:1.5px}
+#armor-bar{display:none;align-items:center;gap:4px;font-size:12px;color:#c0600a;font-weight:600}
+#armor-fill{height:8px;border-radius:4px;background:linear-gradient(90deg,#f8a020,#e06010);transition:width .3s}
+#armor-track{width:60px;height:8px;background:#f0e0d0;border-radius:4px;overflow:hidden}
+canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5px solid #d8d0e0;touch-action:none;cursor:pointer}
+#btns{display:flex;border:1.5px solid #d8d0e0;border-top:none;border-radius:0 0 16px 16px;overflow:hidden}
+.gbtn{flex:1;height:62px;border:none;background:#f8f6fc;font-size:15px;font-weight:700;color:#3a3848;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;user-select:none;-webkit-user-select:none;transition:background .1s}
+.gbtn:active{background:#ede8f8}
+#jump-btn{border-right:.75px solid #d8d0e0}
+#duck-btn{border-left:.75px solid #d8d0e0}
+#hint{text-align:center;margin-top:7px;font-size:11px;color:#ccc;line-height:1.6}
+@media(orientation:landscape){body{padding:3px 8px}.gbtn{height:46px;font-size:13px}#hint{display:none}}
+
+/* ── LEADERBOARD MODAL ── */
+#lb-modal{
+  display:none;position:fixed;inset:0;z-index:9999;
+  background:rgba(18,12,36,0.92);
+  align-items:center;justify-content:center;
+  padding:12px;
+}
+#lb-modal.show{display:flex;}
+#lb-box{
+  background:#1e1630;border:1.5px solid #4a3878;border-radius:16px;
+  padding:18px 16px 14px;width:min(400px,100%);
+  max-height:min(580px,90vh);
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  color:#e8e0f8;font-size:14px;
+}
+#lb-box h2{font-size:16px;font-weight:700;color:#c8b0f0;text-align:center;margin-bottom:3px}
+#lb-box .sub{text-align:center;font-size:11px;color:#8070a8;margin-bottom:10px}
+.lb-row{display:grid;grid-template-columns:26px 1fr auto;gap:6px;align-items:center;
+  padding:6px 8px;border-radius:8px;margin-bottom:3px;transition:background .1s}
+.lb-row.me{background:rgba(200,160,255,0.15);border:1px solid rgba(200,160,255,0.3)}
+.lb-row.top1{background:rgba(255,215,0,0.12);border:1px solid rgba(255,215,0,0.25)}
+.lb-row.top2{background:rgba(192,192,192,0.1)}
+.lb-row.top3{background:rgba(205,127,50,0.1)}
+.lb-rank{font-weight:700;font-size:14px;text-align:center}
+.lb-name{font-weight:600;color:#d0c0f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{font-weight:700;color:#f8d060;text-align:right;white-space:nowrap}
+.lb-you{font-size:11px;color:#a090d0;margin:10px 0 6px;border-top:1px solid #3a2860;padding-top:10px;text-align:center}
+#lb-close{width:100%;margin-top:10px;padding:10px;border-radius:10px;
+  border:none;background:#5a3a9a;color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+#lb-close:active{background:#4a2a8a}
+
+/* ── NAME INPUT MODAL ── */
+#name-modal{
+  display:none;position:fixed;inset:0;z-index:10000;
+  background:rgba(18,12,36,0.92);
+  align-items:center;justify-content:center;
+  padding:12px;
+}
+#name-modal.show{display:flex;}
+#name-box{
+  background:#1e1630;border:1.5px solid #5a40a0;border-radius:16px;
+  padding:24px 20px;width:min(340px,94%);color:#e8e0f8;text-align:center;
+}
+#name-box h2{font-size:18px;font-weight:700;color:#c8b0f0;margin-bottom:6px}
+#name-box p{font-size:12px;color:#8070a8;margin-bottom:16px;line-height:1.5}
+#name-input{
+  width:100%;padding:10px 14px;border-radius:10px;
+  border:1.5px solid #5a40a0;background:#2a1e50;
+  color:#e8e0f8;font-size:16px;font-weight:600;text-align:center;
+  outline:none;margin-bottom:8px;
+}
+#name-input:focus{border-color:#9070e0}
+#name-err{font-size:11px;color:#f06060;min-height:16px;margin-bottom:10px}
+#name-ok{width:100%;padding:12px;border-radius:10px;border:none;
+  background:#5a3a9a;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
+#name-ok:active{background:#4a2a8a}
+#name-ok:disabled{background:#3a2860;color:#6a5a8a;cursor:not-allowed}
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="hud">
+    <span>Điểm: <strong id="score-el">00000</strong></span>
+    <div id="armor-bar">🛡️ <div id="armor-track"><div id="armor-fill" style="width:100%"></div></div></div>
+    <span id="hi-el">Kỷ lục: 00000</span>
+    <span style="display:flex;align-items:center;gap:6px">
+      <span id="speed-el">×1.0</span>
+      <button id="mute-btn" onclick="toggleMute()" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;color:#bbb">🔊</button>
+    </span>
+  </div>
+  <canvas id="gc"></canvas>
+  <div id="btns">
+    <button class="gbtn" id="jump-btn">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 13V3M3 8l5-5 5 5" stroke="#3a3848" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Nhảy
+    </button>
+    <button class="gbtn" id="duck-btn">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8l5 5 5-5" stroke="#3a3848" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Cúi
+    </button>
+  </div>
+  <div id="hint">💻 Space/↑ nhảy · ↓ cúi (2× cúi = xuống hầm) · 🪙+3đ · 🛡️ hầm=giáp sắt</div>
+
+  <!-- Leaderboard modal -->
+  <div id="lb-modal">
+    <div id="lb-box">
+      <h2>🏆 Bảng Xếp Hạng</h2>
+      <div class="sub">Top 10 người chơi xuất sắc nhất</div>
+      <div id="lb-list"></div>
+      <div id="lb-you-row"></div>
+      <button id="lb-close" onclick="closeLB()">Chơi lại</button>
+    </div>
+  </div>
+  <!-- Name input modal -->
+  <div id="name-modal">
+    <div id="name-box">
+      <h2>🦤 Đặt tên người chơi</h2>
+      <p>Tên từ 4–15 ký tự<br>Không trùng với top 10</p>
+      <input id="name-input" maxlength="15" placeholder="Tên của bạn..." autocomplete="off" spellcheck="false"/>
+      <div id="name-err"></div>
+      <button id="name-ok" onclick="submitName()">Xác nhận ✓</button>
+    </div>
+  </div>
+</div>
+<script>
+// ═══════════════════════════════════════════
+// CANVAS SETUP
+// ═══════════════════════════════════════════
+const cv = document.getElementById('gc');
+const cx = cv.getContext('2d');
+const DPR = Math.min(window.devicePixelRatio||1,2);
+let CW, CH;
+const LOGIC_H = 320;
+
+function rsz(){
+  const land = window.innerWidth > window.innerHeight;
+  CW = cv.parentElement.clientWidth;
+  CH = land ? Math.min(window.innerHeight-116, 260) : LOGIC_H;
+  cv.width = CW*DPR; cv.height = CH*DPR;
+  cv.style.height = CH+'px';
+  cx.setTransform(DPR,0,0,DPR,0,0);
+}
+rsz();
+window.addEventListener('resize', rsz);
+window.addEventListener('orientationchange', ()=>setTimeout(rsz,200));
+
+// ═══════════════════════════════════════════
+// CONSTANTS
+// ═══════════════════════════════════════════
+const GY      = 256;   // ground y — đủ chỗ cho chân đà điểu bên dưới
+const OX      = 70;    // ostrich x fixed
+const GRAV    = 0.74;
+const JUMP_V  = -17;
+const MIN_OBS_GAP = 280; // khoảng cách tối thiểu giữa mọi chướng ngại vật (trên + dưới)
+
+// Ceiling obstacle: stalactite bám từ trần xuống đến đây
+// Đà điểu thường cao ~52px → đầu ở GY-52 = 196
+// Stalactite phải thấp hơn để chạm đầu khi không cúi
+// Khi cúi cao ~26px → đầu ở GY-26 = 222
+// Stalactite đáy ở khoảng 210 = giữa 196 và 222
+const CEIL_BOT = 212;  // đáy stalactite — phải cúi để tránh
+
+// Underground tunnel
+const UG_GY   = GY + 55;  // mặt đất hầm
+const UG_CEIL = GY + 12;  // trần hầm (ngay dưới mặt đất)
+const UG_LEN  = 1200;     // px chiều dài hầm (tương ứng ~20đ)
+
+// ═══════════════════════════════════════════
+// AUDIO ENGINE
+// ═══════════════════════════════════════════
+const AC = new (window.AudioContext||window.webkitAudioContext)();
+let muted = false;
+function resumeAC(){ if(AC.state==='suspended') AC.resume(); }
+
+function osc(type,freq,atk,sus,rel,vol,fEnd){
+  if(muted) return;
+  const o=AC.createOscillator(),g=AC.createGain();
+  o.connect(g);g.connect(AC.destination);
+  o.type=type; o.frequency.value=freq;
+  if(fEnd) o.frequency.exponentialRampToValueAtTime(fEnd,AC.currentTime+atk+sus);
+  const t=AC.currentTime;
+  g.gain.setValueAtTime(0,t);
+  g.gain.linearRampToValueAtTime(vol,t+atk);
+  g.gain.setValueAtTime(vol,t+atk+sus);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+atk+sus+rel);
+  o.start(t);o.stop(t+atk+sus+rel+0.05);
+}
+function nz(dur,vol,hp){
+  if(muted) return;
+  const buf=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const src=AC.createBufferSource(); src.buffer=buf;
+  const g=AC.createGain();
+  g.gain.setValueAtTime(vol,AC.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+dur);
+  if(hp){const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=hp;src.connect(f);f.connect(g);}
+  else src.connect(g);
+  g.connect(AC.destination);src.start();src.stop(AC.currentTime+dur+0.01);
+}
+
+const snd={
+  jump:  ()=>{ osc('sine',280,0.01,0.01,0.18,0.22,700); nz(0.05,0.05,400); },
+  duck:  ()=>  osc('sine',500,0.01,0.01,0.12,0.15,200),
+  land:  ()=>{ nz(0.08,0.12,80); osc('triangle',110,0.005,0.02,0.07,0.1); },
+  hit:   ()=>{ nz(0.5,0.38,50); osc('sawtooth',80,0.005,0.05,0.35,0.28); osc('sawtooth',115,0.005,0.03,0.28,0.2); osc('sine',860,0.005,0.01,0.55,0.25,200); },
+  coin:  ()=>{ osc('sine',880,0.01,0.04,0.1,0.2); osc('sine',1320,0.01,0.03,0.08,0.12); },
+  enter: ()=>{ osc('sine',200,0.01,0.08,0.3,0.25,100); nz(0.2,0.15,60); },
+  armor: ()=>{ [440,554,660,880,1100].forEach((f,i)=>setTimeout(()=>osc('sine',f,0.01,0.06,0.2,0.18),i*70)); },
+  crack: ()=>{ nz(0.3,0.3,100); osc('square',180,0.01,0.05,0.25,0.2); },
+  mile:  ()=>{ [440,554,660,880].forEach((f,i)=>setTimeout(()=>osc('sine',f,0.01,0.04,0.14,0.16),i*75)); },
+};
+
+// Background music
+let bgBeat=0, bgTimer=null, bgOn=false;
+const PENTA=[261.6,293.7,329.6,392,440,523.3,587.3,659.3];
+function bgTick(){
+  if(!bgOn||muted) return;
+  const bpm=Math.min(168,120+Math.floor(sm*14)), ms=60000/bpm;
+  if(bgBeat%2===0){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);o.type='sine';const t=AC.currentTime;o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(38,t+0.18);g.gain.setValueAtTime(0.26,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.22);o.start(t);o.stop(t+0.24);}
+  if(bgBeat%4===2) nz(0.12,0.12,2000);
+  nz(0.05,bgBeat%2===0?0.07:0.04,9000);
+  if(bgBeat%4===0) osc('sawtooth',82,0.01,0.12,0.08,0.1);
+  if(bgBeat%4===2) osc('sawtooth',98,0.01,0.08,0.06,0.08);
+  if(bgBeat%2===0&&Math.random()>.3){const oct=Math.random()>.4?2:1;osc('triangle',PENTA[Math.floor(Math.random()*PENTA.length)]*oct,0.015,0.06,ms/1100,0.07);}
+  bgBeat++;
+  bgTimer=setTimeout(bgTick,ms);
+}
+function startBg(){ if(bgOn)return; bgOn=true; bgBeat=0; resumeAC(); bgTick(); }
+function stopBg(){ bgOn=false; if(bgTimer){clearTimeout(bgTimer);bgTimer=null;} }
+function toggleMute(){
+  muted=!muted;
+  document.getElementById('mute-btn').textContent=muted?'🔇':'🔊';
+  if(muted) stopBg();
+  else if(st==='running') startBg();
+}
+
+// ═══════════════════════════════════════════
+// GAME STATE
+// ═══════════════════════════════════════════
+let st='idle', sc=0, hi=0, fr=0, sm=1, spd=5;
+
+// Ostrich
+let bird={
+  x:OX, y:GY, vy:0,
+  duck:false, duckCount:0, duckCooldown:0,
+  run:0,
+  underground:false,  // đang ở trong hầm
+  armor:false,        // có giáp sắt
+  armorTimer:0,       // đồng hồ đếm ngược giáp (s*60)
+  armorFlash:0,       // nhấp nháy khi gần hết
+  ironBird:false,     // đã tiến hóa thành chim sắt
+};
+
+// Obstacle pool (trên mặt đất + trần)
+let obs=[];        // { x, tp:'cac'/'bird'/'ceil', ...}
+let coins=[];      // { x, y, r, bob, collected }
+let parts=[];      // particles
+let clouds=[], ground=[];
+
+// Tunnel state
+let tunnel=null;   // { x, active:bool }
+let lastTunnelScore=0; // điểm lần tunnel cuối
+
+// Announcements
+let announce=null; // { text, timer, color }
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+function init(){
+  sc=0; fr=0; sm=1; spd=5;
+  bird={x:OX,y:GY,vy:0,duck:false,duckCount:0,duckCooldown:0,run:0,underground:false,armor:false,armorTimer:0,armorFlash:0,ironBird:false};
+  obs=[]; coins=[]; parts=[]; tunnel=null; lastTunnelScore=0; announce=null;
+  clouds=[]; for(let i=0;i<5;i++) clouds.push(mkCloud(Math.random()*CW));
+  ground=[]; for(let i=0;i<20;i++) ground.push(mkGrass(i*65));
+  st='running';
+  updateArmorBar();
+}
+
+// ═══════════════════════════════════════════
+// FACTORY FUNCTIONS
+// ═══════════════════════════════════════════
+function mkCloud(x){ return{x,y:20+Math.random()*50,r:18+Math.random()*22,layers:Math.floor(2+Math.random()*3),sp:.25+Math.random()*.25}; }
+function mkGrass(x){ return{x,h:3+Math.random()*7,w:1+Math.random()*2,type:Math.random()}; }
+
+// Tính x của chướng ngại vật cuối cùng (cả trên lẫn dưới)
+function lastObsX(){
+  let mx = -9999;
+  for(const o of obs) if(o.x > mx) mx=o.x;
+  return mx;
+}
+
+function spawnObs(){
+  const last = lastObsX();
+  if(last > CW - MIN_OBS_GAP) return; // chưa đủ khoảng cách
+
+  // Chướng ngại vật trên trần chỉ xuất hiện sau 100đ
+  const canCeil = sc > 100 && Math.random() < 0.35;
+
+  if(canCeil){
+    // Stalactite từ trần — đà điểu phải cúi để tránh
+    obs.push({ x:CW+40, tp:'ceil', h:CEIL_BOT, w:22+Math.floor(Math.random()*2)*22 });
+  } else {
+    // Chướng ngại dưới đất
+    if(Math.random()<0.2 && sm>1.5){
+      obs.push({x:CW+40,tp:'bird',y:GY-40-Math.random()*44,w:44,h:26,wf:0,wup:true});
+    } else {
+      const h=32+Math.random()*36, cl=Math.random()>.5?2:1;
+      obs.push({x:CW+40,tp:'cac',h,cl,w:cl===2?48:24});
+    }
+  }
+}
+
+function spawnCoin(){
+  if(Math.random()<0.012 && (!coins.length || coins[coins.length-1].x < CW-100)){
+    const onGround = Math.random()>.4;
+    const gy = bird.underground ? UG_GY : GY;
+    const y = onGround ? gy-20-Math.random()*30 : gy-65-Math.random()*55;
+    coins.push({x:CW+50, y, r:10, bob:Math.random()*Math.PI*2, collected:false});
+  }
+}
+
+function spawnTunnel(){
+  // Xuất hiện mỗi 200đ
+  const nextTrigger = lastTunnelScore + 200;
+  if(sc >= nextTrigger && !tunnel){
+    tunnel={x:CW+80, len:UG_LEN, entryDone:false, armorSpawned:false, armorX:0};
+    lastTunnelScore = nextTrigger;
+    // Tạo đồng giáp sắt trong hầm
+    tunnel.armorX = CW + 80 + UG_LEN*0.5; // giữa đường hầm
+  }
+}
+
+// ═══════════════════════════════════════════
+// HIT DETECTION
+// ═══════════════════════════════════════════
+function hitObs(o){
+  // Giáp đang hoạt động → miễn nhiễm
+  if(bird.armor) return false;
+
+  const bh = bird.duck ? 24 : 52;
+  const by_top = bird.y - bh;
+  const by_bot = bird.y;
+  const bx_l = OX+8, bx_r = OX+36;
+
+  if(o.tp==='cac'){
+    return bx_l < o.x+o.w-5 && bx_r > o.x+5 && by_top < GY && by_bot > GY-o.h;
+  } else if(o.tp==='bird'){
+    return bx_l < o.x+o.w && bx_r > o.x && by_top < o.y && by_bot > o.y-o.h;
+  } else if(o.tp==='ceil'){
+    // Đà điểu bình thường cao 52px: đầu ở GY-52 = 196
+    // CEIL_BOT = 212 → stalactite thò xuống tới y=212
+    // Nếu không cúi: by_top=196 < 212 → chết
+    // Nếu cúi (bh=24): by_top=224 > 212 → sống
+    return bx_l < o.x+o.w-3 && bx_r > o.x+3 && by_top < CEIL_BOT;
+  }
+  return false;
+}
+
+function hitCoin(c){
+  if(c.collected) return false;
+  const bh=bird.duck?24:52;
+  return OX+4 < c.x+c.r && OX+40 > c.x-c.r && bird.y-bh < c.y+c.r && bird.y > c.y-c.r;
+}
+
+// ═══════════════════════════════════════════
+// CONTROLS
+// ═══════════════════════════════════════════
+function jump(){
+  if(st!=='running'){
+    if(!playerName){ showNameModal(); return; }
+    init(); startBg(); return;
+  }
+  if(bird.underground) return; // không nhảy trong hầm
+  const gy = GY;
+  if(bird.y >= gy-1 && !bird.duck){ bird.vy=JUMP_V; snd.jump(); }
+}
+
+function duckPress(){
+  if(st!=='running') return;
+  resumeAC();
+
+  // Trong hầm: không cần cúi đặc biệt
+  if(bird.underground){
+    bird.duck=true;
+    return;
+  }
+
+  if(bird.duck){
+    // Lần cúi thứ 2 trong 0.5s → xuống hầm
+    if(bird.duckCooldown > 0 && tunnel){
+      const nearTunnel = Math.abs(bird.x - tunnel.x) < 120 || (bird.x > tunnel.x && bird.x < tunnel.x+tunnel.len);
+      if(nearTunnel){
+        enterTunnel();
+        return;
+      }
+    }
+    return;
+  }
+
+  // Lần cúi đầu
+  bird.duck=true;
+  bird.duckCooldown=30; // 0.5s window để cúi lần 2
+  if(!bird.underground) snd.duck();
+}
+
+function duckRelease(){
+  if(bird.underground) return; // trong hầm luôn cúi
+  bird.duck=false;
+}
+
+function enterTunnel(){
+  if(!tunnel || bird.underground) return;
+  bird.underground=true;
+  bird.y = UG_GY;
+  bird.vy=0;
+  bird.duck=true;
+  snd.enter();
+  setAnnounce('⛏️ Vào hầm!', '#8060c0', 80);
+}
+
+function exitTunnel(){
+  bird.underground=false;
+  bird.y = GY;
+  bird.vy=0;
+  bird.duck=false;
+  obs=[]; // xóa chướng ngại vật khi ra hầm
+  setAnnounce('🌟 Ra khỏi hầm!', '#40a060', 90);
+}
+
+// ═══════════════════════════════════════════
+// ARMOR / EVOLUTION
+// ═══════════════════════════════════════════
+function giveArmor(){
+  bird.armor=true;
+  bird.ironBird=true;
+  bird.armorTimer=600; // 10s * 60fps
+  bird.armorFlash=0;
+  snd.armor();
+  setAnnounce('⚔️ Chim Sắt! Giáp bất tử 10s!', '#d07820', 150);
+  updateArmorBar();
+}
+
+function updateArmorBar(){
+  const bar=document.getElementById('armor-bar');
+  const fill=document.getElementById('armor-fill');
+  if(bird.armor){
+    bar.style.display='flex';
+    fill.style.width=(bird.armorTimer/600*100)+'%';
+    fill.style.background=bird.armorTimer<180
+      ? 'linear-gradient(90deg,#e04020,#c02010)'
+      : 'linear-gradient(90deg,#f8a020,#e06010)';
+  } else {
+    bar.style.display='none';
+  }
+}
+
+function setAnnounce(text,color,frames){
+  announce={text,color,timer:frames};
+}
+
+// ═══════════════════════════════════════════
+// INPUT WIRING
+// ═══════════════════════════════════════════
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump();}
+  if(e.code==='ArrowDown'){e.preventDefault();duckPress();}
+});
+document.addEventListener('keyup',e=>{
+  if(e.code==='ArrowDown') duckRelease();
+});
+document.getElementById('jump-btn').addEventListener('pointerdown',e=>{e.preventDefault();jump();});
+const dbtn=document.getElementById('duck-btn');
+dbtn.addEventListener('pointerdown',e=>{e.preventDefault();duckPress();});
+dbtn.addEventListener('pointerup',duckRelease);
+dbtn.addEventListener('pointerleave',duckRelease);
+dbtn.addEventListener('pointercancel',duckRelease);
+
+let tsY=0;
+cv.addEventListener('pointerdown',e=>{tsY=e.clientY;});
+cv.addEventListener('pointerup',e=>{
+  const dy=e.clientY-tsY;
+  if(Math.abs(dy)<14){jump();return;}
+  if(dy<-18) jump();
+  if(dy>18){ duckPress(); setTimeout(duckRelease,350); }
+});
+
+// ═══════════════════════════════════════════
+// DRAW HELPERS
+// ═══════════════════════════════════════════
+function rr(x,y,w,h,r){
+  cx.beginPath();
+  cx.moveTo(x+r,y);cx.lineTo(x+w-r,y);cx.quadraticCurveTo(x+w,y,x+w,y+r);
+  cx.lineTo(x+w,y+h-r);cx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  cx.lineTo(x+r,y+h);cx.quadraticCurveTo(x,y+h,x,y+h-r);
+  cx.lineTo(x,y+r);cx.quadraticCurveTo(x,y,x+r,y);
+  cx.closePath();cx.fill();
+}
+
+// ── Sky ──
+let timeOfDay=0;
+function drawSky(){
+  timeOfDay++;
+  if(bird.underground){
+    // Hầm: nền tối
+    cx.fillStyle='#1a1428'; cx.fillRect(0,0,CW,CH);
+    // Đốm lân tinh
+    cx.fillStyle='rgba(100,80,160,0.3)';
+    for(let i=0;i<8;i++) cx.fillRect(50+i*90+Math.sin(timeOfDay/60+i)*10, 20+i%3*20, 3, 3);
+    return;
+  }
+  cx.fillStyle='#b8d8f0'; cx.fillRect(0,0,CW,CH*0.55);
+  cx.fillStyle='#daeeff'; cx.fillRect(0,CH*0.55,CW,CH*0.45);
+  // Sun
+  cx.fillStyle='rgba(255,230,120,0.55)'; cx.beginPath(); cx.arc(CW*0.85,40,22,0,Math.PI*2); cx.fill();
+  cx.fillStyle='rgba(255,245,180,0.9)'; cx.beginPath(); cx.arc(CW*0.85,40,14,0,Math.PI*2); cx.fill();
+}
+
+// ── Clouds ──
+function drawCloud(c){
+  cx.save(); cx.globalAlpha=0.82; cx.fillStyle='#fff';
+  for(let i=0;i<c.layers+1;i++){
+    cx.beginPath(); cx.ellipse(c.x+i*c.r*.7,c.y-(i%2===0?c.r*.3:0),c.r*(.7+(i%2)*.3),c.r*.55,0,0,Math.PI*2); cx.fill();
+  }
+  cx.restore();
+}
+
+// ── Ground ──
+function drawGround(){
+  if(bird.underground){
+    // Hầm: vẽ trần hầm và sàn hầm
+    // Sàn hầm
+    cx.fillStyle='#5a4a30'; cx.fillRect(0,UG_GY+2,CW,CH-UG_GY-2);
+    cx.strokeStyle='#8a6a40'; cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(0,UG_GY+2); cx.lineTo(CW,UG_GY+2); cx.stroke();
+    // Đường vân sàn hầm
+    cx.strokeStyle='rgba(100,70,30,0.3)'; cx.lineWidth=1;
+    for(let i=1;i<3;i++){
+      cx.beginPath(); cx.moveTo(0,UG_GY+8*i); cx.lineTo(CW,UG_GY+8*i); cx.stroke();
+    }
+    // Trần hầm
+    cx.fillStyle='#7a5a38'; cx.fillRect(0,0,CW,UG_CEIL);
+    cx.strokeStyle='#5a3a20'; cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(0,UG_CEIL); cx.lineTo(CW,UG_CEIL); cx.stroke();
+    // Đá nhũ trần hầm
+    cx.fillStyle='#6a4a28';
+    ground.forEach((g,i)=>{
+      if(i%2===0){
+        cx.beginPath(); cx.moveTo(g.x,UG_CEIL); cx.lineTo(g.x-4,UG_CEIL+8+g.h); cx.lineTo(g.x+4,UG_CEIL+8+g.h); cx.closePath(); cx.fill();
+      }
+    });
+    return;
+  }
+
+  // Mặt đất bình thường
+  cx.fillStyle='#cec4a0'; cx.fillRect(0,GY+4,CW,CH-GY-4);
+  cx.strokeStyle='#a89868'; cx.lineWidth=2;
+  cx.beginPath(); cx.moveTo(0,GY+4); cx.lineTo(CW,GY+4); cx.stroke();
+  cx.strokeStyle='#e0d4b0'; cx.lineWidth=1;
+  cx.beginPath(); cx.moveTo(0,GY+3); cx.lineTo(CW,GY+3); cx.stroke();
+  cx.fillStyle='#8aaa5a';
+  ground.forEach(g=>{
+    if(g.type<0.5){
+      cx.beginPath(); cx.moveTo(g.x,GY+2); cx.lineTo(g.x-g.w,GY+2-g.h); cx.lineTo(g.x+g.w,GY+2-g.h*.6); cx.lineTo(g.x+g.w*2,GY+2); cx.closePath(); cx.fill();
+    } else {
+      cx.fillStyle='#aac870'; cx.beginPath(); cx.ellipse(g.x,GY+1,g.w*2,g.h*.5,-0.2,0,Math.PI*2); cx.fill(); cx.fillStyle='#8aaa5a';
+    }
+  });
+  cx.fillStyle='#c8bc96';
+  ground.forEach((g,i)=>{ if(i%3===0){ cx.beginPath(); cx.ellipse(g.x+15,GY+6,3,2,0,0,Math.PI*2); cx.fill(); } });
+}
+
+// ── Tunnel on surface ──
+function drawTunnelSurface(t){
+  if(!t||bird.underground) return;
+  const tx=t.x, tlen=t.len;
+  cx.save();
+
+  // Phủ tối phần nhập đường hầm
+  const entryW=80;
+  cx.fillStyle='#4a3820';
+  cx.fillRect(tx-4,GY-entryW*0.3,16,entryW*0.3+4);
+  // Cửa hầm hình vòm
+  cx.fillStyle='#2a1808';
+  cx.beginPath(); cx.arc(tx+4,GY+2,14,Math.PI,0); cx.lineTo(tx+18,GY+2); cx.lineTo(tx-10,GY+2); cx.closePath(); cx.fill();
+
+  // Thanh ngang chỉ đường hầm
+  cx.strokeStyle='#6a4a28'; cx.lineWidth=3;
+  cx.setLineDash([8,6]);
+  cx.beginPath(); cx.moveTo(tx,GY+2); cx.lineTo(tx+tlen,GY+2); cx.stroke();
+  cx.setLineDash([]);
+
+  // Chỉ báo khoảng cách
+  const dist=tx-OX;
+  if(dist>0 && dist<240){
+    cx.globalAlpha=Math.min(1,(240-dist)/120);
+    // Nền thông báo
+    cx.fillStyle='rgba(40,20,8,0.75)';
+    rr(CW/2-110,GY-80,220,44,10);
+    cx.fillStyle='#f8d080';
+    cx.font='bold 14px -apple-system,sans-serif';
+    cx.textAlign='center';
+    cx.fillText('⬇⬇ BẤM CÚI 2 LẦN để vào hầm!',CW/2,GY-60);
+    cx.font='11px -apple-system,sans-serif'; cx.fillStyle='rgba(255,220,100,0.8)';
+    cx.fillText('🛡️ Có giáp sắt bên trong',CW/2,GY-44);
+    cx.globalAlpha=1;
+    cx.textAlign='left';
+  }
+  cx.restore();
+}
+
+// ── Tunnel underground overlay ──
+function drawTunnelUG(t){
+  if(!t||!bird.underground) return;
+  // Giáp sắt trong hầm
+  if(!t.armorSpawned && t.armorX > 0){
+    const ax=t.armorX;
+    const bob=Math.sin(timeOfDay*0.06)*4;
+    cx.save();
+    // Glow
+    cx.globalAlpha=0.4; cx.fillStyle='#f8a020';
+    cx.beginPath(); cx.arc(ax,UG_GY-22+bob,18,0,Math.PI*2); cx.fill();
+    cx.globalAlpha=1;
+    // Giáp icon
+    cx.fillStyle='#c8a040';
+    cx.beginPath(); cx.moveTo(ax,UG_GY-36+bob); cx.lineTo(ax+14,UG_GY-28+bob); cx.lineTo(ax+14,UG_GY-14+bob); cx.lineTo(ax,UG_GY-8+bob); cx.lineTo(ax-14,UG_GY-14+bob); cx.lineTo(ax-14,UG_GY-28+bob); cx.closePath(); cx.fill();
+    cx.fillStyle='#f0c060';
+    cx.beginPath(); cx.moveTo(ax,UG_GY-33+bob); cx.lineTo(ax+10,UG_GY-27+bob); cx.lineTo(ax+10,UG_GY-16+bob); cx.lineTo(ax,UG_GY-11+bob); cx.lineTo(ax-10,UG_GY-16+bob); cx.lineTo(ax-10,UG_GY-27+bob); cx.closePath(); cx.fill();
+    cx.fillStyle='#c87820'; cx.font='bold 11px sans-serif'; cx.textAlign='center';
+    cx.fillText('⚔️',ax,UG_GY-17+bob); cx.textAlign='left';
+    // Hit check for armor pickup
+    if(Math.abs(bird.x-ax)<20 && !bird.ironBird){
+      t.armorSpawned=true;
+      giveArmor();
+    }
+    cx.restore();
+  }
+}
+
+// ── Cactus ──
+function drawCac(o){
+  const bx=o.x,by=GY; cx.save();
+  cx.fillStyle='rgba(0,0,0,0.07)'; cx.beginPath(); cx.ellipse(bx+o.w/2,by+3,o.w*.6,4,0,0,Math.PI*2); cx.fill();
+  const sg=cx.createLinearGradient(bx+6,0,bx+18,0);
+  sg.addColorStop(0,'#4a9040'); sg.addColorStop(.4,'#5cb050'); sg.addColorStop(1,'#3a7030');
+  cx.fillStyle=sg;
+  rr(bx+6,by-o.h,12,o.h,6);
+  rr(bx-3,by-Math.round(o.h*.62),10,7,4); rr(bx-3,by-Math.round(o.h*.62)-16,7,20,4);
+  cx.fillStyle='#6cc860'; cx.fillRect(bx-1,by-Math.round(o.h*.62)-14,3,12); cx.fillRect(bx+8,by-o.h+1,3,o.h*.5);
+  cx.fillStyle=sg;
+  if(o.cl===2){
+    const h2=Math.round(o.h*.8); rr(bx+24,by-h2,10,h2,5); rr(bx+22,by-Math.round(o.h*.48),14,6,3); rr(bx+32,by-Math.round(o.h*.48)-13,7,17,4);
+    cx.fillStyle='#6cc860'; cx.fillRect(bx+25,by-h2+1,3,h2*.6);
+  }
+  cx.restore();
+}
+
+// ── Flying Bird obstacle ──
+function drawFlyBird(o){
+  const bx=o.x,by=o.y; cx.save();
+  cx.fillStyle='#6a5a9a';
+  cx.beginPath(); cx.ellipse(bx+20,by-8,18,9,-0.1,0,Math.PI*2); cx.fill();
+  cx.fillStyle='#7a6aaa'; cx.beginPath(); cx.ellipse(bx+34,by-13,9,7,0.3,0,Math.PI*2); cx.fill();
+  cx.fillStyle='#c89040'; cx.beginPath(); cx.moveTo(bx+40,by-13); cx.lineTo(bx+50,by-11); cx.lineTo(bx+40,by-9); cx.closePath(); cx.fill();
+  cx.fillStyle='#fff'; cx.beginPath(); cx.arc(bx+36,by-14,3.5,0,Math.PI*2); cx.fill();
+  cx.fillStyle='#111'; cx.beginPath(); cx.arc(bx+37,by-14,2,0,Math.PI*2); cx.fill();
+  const wy=o.wup?-10:3;
+  cx.fillStyle='#8a7aba';
+  cx.beginPath(); cx.save(); cx.translate(bx+18,by-8); cx.rotate(o.wup?-0.5:0.3); cx.ellipse(0,0,20,7,0,0,Math.PI*2); cx.fill(); cx.restore();
+  cx.fillStyle='#5a4a8a'; cx.beginPath(); cx.moveTo(bx+4,by-8); cx.lineTo(bx-8,by-4); cx.lineTo(bx-6,by-12); cx.closePath(); cx.fill();
+  cx.restore();
+}
+
+// ── Ceiling stalactite ──
+function drawCeil(o){
+  // Stalactite: từ y=0 đến y=CEIL_BOT
+  const bx=o.x; cx.save();
+  const g=cx.createLinearGradient(bx+6,0,bx+18,0);
+  g.addColorStop(0,'#7a5a90'); g.addColorStop(.5,'#9a78b0'); g.addColorStop(1,'#6a4a80');
+  cx.fillStyle=g;
+
+  if(o.w===22){
+    // Đơn: 1 nhũ đá dày
+    rr(bx+5,0,12,CEIL_BOT,6);
+    // Mũi nhọn
+    cx.beginPath(); cx.moveTo(bx+5,CEIL_BOT); cx.lineTo(bx+11,CEIL_BOT+10); cx.lineTo(bx+17,CEIL_BOT); cx.closePath(); cx.fill();
+    // Highlight
+    cx.fillStyle='rgba(180,150,220,0.4)'; cx.fillRect(bx+6,2,4,CEIL_BOT-4);
+    // Nhũ phụ bên cạnh
+    cx.fillStyle=g;
+    rr(bx-6,0,8,Math.round(CEIL_BOT*.6),4);
+    cx.beginPath(); cx.moveTo(bx-6,Math.round(CEIL_BOT*.6)); cx.lineTo(bx-2,Math.round(CEIL_BOT*.6)+8); cx.lineTo(bx+2,Math.round(CEIL_BOT*.6)); cx.closePath(); cx.fill();
+  } else {
+    // Đôi: 2 nhũ
+    rr(bx+4,0,12,CEIL_BOT,6);
+    cx.beginPath(); cx.moveTo(bx+4,CEIL_BOT); cx.lineTo(bx+10,CEIL_BOT+10); cx.lineTo(bx+16,CEIL_BOT); cx.closePath(); cx.fill();
+    rr(bx+24,0,12,Math.round(CEIL_BOT*.82),6);
+    cx.beginPath(); cx.moveTo(bx+24,Math.round(CEIL_BOT*.82)); cx.lineTo(bx+30,Math.round(CEIL_BOT*.82)+10); cx.lineTo(bx+36,Math.round(CEIL_BOT*.82)); cx.closePath(); cx.fill();
+    cx.fillStyle='rgba(180,150,220,0.4)'; cx.fillRect(bx+5,2,4,CEIL_BOT-4); cx.fillRect(bx+25,2,4,Math.round(CEIL_BOT*.82)-4);
+    // Drip
+    cx.fillStyle='rgba(150,100,200,0.5)';
+    cx.beginPath(); cx.ellipse(bx+10,CEIL_BOT+11,2,3,0,0,Math.PI*2); cx.fill();
+    cx.beginPath(); cx.ellipse(bx+30,Math.round(CEIL_BOT*.82)+11,2,3,0,0,Math.PI*2); cx.fill();
+  }
+  cx.restore();
+}
+
+// ── Coin ──
+function drawCoin(c){
+  const bobY=c.y+Math.sin(c.bob)*4; cx.save();
+  cx.globalAlpha=0.3; cx.fillStyle='#f8d040';
+  cx.beginPath(); cx.arc(c.x,bobY,c.r+5,0,Math.PI*2); cx.fill();
+  cx.globalAlpha=1;
+  const cg=cx.createRadialGradient(c.x-3,bobY-3,1,c.x,bobY,c.r);
+  cg.addColorStop(0,'#fff8a0'); cg.addColorStop(.4,'#f8c840'); cg.addColorStop(1,'#d4920a');
+  cx.fillStyle=cg; cx.beginPath(); cx.arc(c.x,bobY,c.r,0,Math.PI*2); cx.fill();
+  cx.strokeStyle='#e8a820'; cx.lineWidth=1.5; cx.beginPath(); cx.arc(c.x,bobY,c.r-3,0,Math.PI*2); cx.stroke();
+  cx.fillStyle='#c47a08'; cx.font='bold 9px sans-serif'; cx.textAlign='center'; cx.textBaseline='middle';
+  cx.fillText('$',c.x,bobY); cx.textBaseline='alphabetic'; cx.textAlign='left';
+  cx.restore();
+}
+
+// ── Ostrich / Iron Bird ──
+function drawOstrich(){
+  const bx=bird.x, by=bird.y;
+  const run=bird.run, onG=by>=GY-1;
+  const duck=bird.duck;
+  const iron=bird.ironBird;
+  const flash=bird.armorFlash;
+
+  cx.save();
+
+  // Armor flash overlay
+  if(iron && bird.armor && flash%6<3){ cx.globalAlpha=0.25; cx.fillStyle='#f8a020'; cx.fillRect(bx-10,by-70,70,80); cx.globalAlpha=1; }
+
+  // Shadow
+  const shadowGY = bird.underground ? UG_GY : GY;
+  cx.fillStyle='rgba(0,0,0,0.1)'; cx.beginPath(); cx.ellipse(bx+20,shadowGY+4,duck?28:18,5,0,0,Math.PI*2); cx.fill();
+
+  // Color scheme
+  const B1=iron?'#607090':'#2e2e50', B2=iron?'#485068':'#1e1e38', B3=iron?'#788aaa':'#2e2e50';
+  const N1=iron?'#909060':'#c8a060', N2=iron?'#b0b070':'#e8c080';
+  const H1=iron?'#888858':'#c8a060', H2=iron?'#a8a870':'#e8c880';
+
+  if(duck){
+    px(bx-5,by-28,16,12,B1); px(bx-9,by-22,8,7,B2);
+    const dg=cx.createRadialGradient(bx+22,by-22,3,bx+22,by-22,28);
+    dg.addColorStop(0,B1); dg.addColorStop(1,B2);
+    cx.fillStyle=dg; cx.beginPath(); cx.ellipse(bx+22,by-22,30,16,0,0,Math.PI*2); cx.fill();
+    cx.fillStyle='rgba(255,255,255,0.08)'; cx.beginPath(); cx.ellipse(bx+20,by-28,24,8,-0.1,0,Math.PI*2); cx.fill();
+    // Neck forward
+    cx.strokeStyle=N1; cx.lineWidth=10; cx.lineCap='round';
+    cx.beginPath(); cx.moveTo(bx+44,by-22); cx.quadraticCurveTo(bx+52,by-28,bx+64,by-26); cx.stroke();
+    cx.strokeStyle=N2; cx.lineWidth=5;
+    cx.beginPath(); cx.moveTo(bx+44,by-22); cx.quadraticCurveTo(bx+52,by-28,bx+64,by-26); cx.stroke();
+    // Head
+    cx.fillStyle=H1; cx.beginPath(); cx.ellipse(bx+70,by-28,9,8,0.2,0,Math.PI*2); cx.fill();
+    cx.fillStyle=H2; cx.beginPath(); cx.ellipse(bx+67,by-31,5,4,-0.3,0,Math.PI*2); cx.fill();
+    // Beak
+    cx.fillStyle='#e8c050'; cx.beginPath(); cx.moveTo(bx+76,by-27); cx.lineTo(bx+86,by-25); cx.lineTo(bx+76,by-23); cx.closePath(); cx.fill();
+    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(bx+72,by-30,3,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#111'; cx.beginPath(); cx.arc(bx+73,by-30,1.8,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#5af'; cx.beginPath(); cx.arc(bx+73.5,by-30.5,0.8,0,Math.PI*2); cx.fill();
+    // Legs
+    drawLeg(bx+14,by,Math.sin(run*0.4)*0.5+0.3,true);
+    drawLeg(bx+26,by,-Math.sin(run*0.4)*0.5+0.1,true);
+    // Iron armor plates
+    if(iron){ cx.fillStyle='rgba(100,120,160,0.7)'; cx.fillRect(bx+2,by-36,16,10); cx.fillRect(bx+18,by-34,16,10); }
+  } else {
+    // Tail
+    cx.fillStyle=B1; cx.beginPath(); cx.ellipse(bx+2,by-30,16,10,0.5,0,Math.PI*2); cx.fill();
+    for(let i=0;i<6;i++){
+      cx.strokeStyle=`rgba(${iron?'80,90,120':'50,50,80'},${0.5+i*0.08})`; cx.lineWidth=1.5;
+      cx.beginPath(); cx.moveTo(bx+4,by-30); cx.quadraticCurveTo(bx-8-i*3,by-34+i*3,bx-10-i*3,by-36-i*3); cx.stroke();
+    }
+    // Body
+    const bg2=cx.createRadialGradient(bx+22,by-32,3,bx+22,by-32,28);
+    bg2.addColorStop(0,B3); bg2.addColorStop(.6,B1); bg2.addColorStop(1,B2);
+    cx.fillStyle=bg2; cx.beginPath(); cx.ellipse(bx+22,by-32,26,22,0,0,Math.PI*2); cx.fill();
+    cx.fillStyle='rgba(255,255,255,0.08)'; cx.beginPath(); cx.ellipse(bx+20,by-38,20,10,-0.2,0,Math.PI*2); cx.fill();
+    // Back spikes (iron: metal fins)
+    if(iron){
+      cx.fillStyle='#78899a';
+      for(let i=0;i<4;i++){ cx.beginPath(); cx.moveTo(bx+8+i*6,by-52); cx.lineTo(bx+5+i*6,by-60); cx.lineTo(bx+11+i*6,by-52); cx.closePath(); cx.fill(); }
+    } else {
+      cx.fillStyle=B2;
+      [0,1,2,3].forEach(i=>{ cx.beginPath(); cx.moveTo(bx+8+i*6,by-52); cx.lineTo(bx+6+i*6,by-58+i); cx.lineTo(bx+11+i*6,by-52); cx.closePath(); cx.fill(); });
+    }
+    // Neck
+    const ns=onG?Math.sin(run*0.25)*3:0;
+    cx.strokeStyle=N1; cx.lineWidth=11; cx.lineCap='round';
+    cx.beginPath(); cx.moveTo(bx+36,by-48); cx.bezierCurveTo(bx+42+ns,by-64,bx+44+ns,by-78,bx+40+ns,by-96); cx.stroke();
+    cx.strokeStyle=N2; cx.lineWidth=5;
+    cx.beginPath(); cx.moveTo(bx+37,by-48); cx.bezierCurveTo(bx+43+ns,by-63,bx+45+ns,by-77,bx+41+ns,by-95); cx.stroke();
+    // Head
+    const hx=bx+40+ns,hy=by-104;
+    cx.fillStyle=H1; cx.beginPath(); cx.ellipse(hx,hy,13,11,0.1,0,Math.PI*2); cx.fill();
+    cx.fillStyle=H2; cx.beginPath(); cx.ellipse(hx-3,hy-4,7,5,-0.3,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#e8c050'; cx.beginPath(); cx.moveTo(hx+10,hy-2); cx.lineTo(hx+24,hy+1); cx.lineTo(hx+24,hy+4); cx.lineTo(hx+10,hy+5); cx.closePath(); cx.fill();
+    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(hx+3,hy-3,4.5,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#1a1a2e'; cx.beginPath(); cx.arc(hx+4,hy-3,3,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#5af'; cx.beginPath(); cx.arc(hx+4.5,hy-3.5,1.2,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(hx+5.5,hy-5,1,0,Math.PI*2); cx.fill();
+    // Arm
+    cx.fillStyle=B2; cx.fillRect(bx+24,by-32,10,6); cx.fillStyle=B1; cx.fillRect(bx+32,by-30,8,5);
+    // Iron armor
+    if(iron){
+      // Shoulder plate
+      cx.fillStyle='rgba(80,100,140,0.8)'; cx.beginPath(); cx.ellipse(bx+16,by-46,12,8,-0.3,0,Math.PI*2); cx.fill();
+      // Chest plate
+      cx.fillStyle='rgba(90,110,150,0.75)'; cx.fillRect(bx+6,by-44,22,16);
+      cx.strokeStyle='rgba(140,170,210,0.6)'; cx.lineWidth=1; cx.strokeRect(bx+8,by-42,18,12);
+    }
+    // Legs
+    const la=onG?Math.sin(run*.28)*.45:-0.2;
+    const la2=onG?Math.sin(run*.28+Math.PI)*.45:0.1;
+    drawLeg(bx+14,by,la,false);
+    drawLeg(bx+26,by,la2,false);
+  }
+  cx.restore();
+}
+
+function px(x,y,w,h,c){ cx.fillStyle=c; cx.fillRect(x,y,w,h); }
+
+function drawLeg(x,groundY,angle,isDuck){
+  const tl=isDuck?18:24, sl=isDuck?16:22;
+  const tx=x+Math.sin(angle)*tl, ty=groundY-tl*Math.cos(Math.abs(angle));
+  const leg1=bird.ironBird?'#7090b0':'#c8a060';
+  const leg2=bird.ironBird?'#90b0d0':'#e8c080';
+  cx.strokeStyle=leg1; cx.lineWidth=isDuck?6:7; cx.lineCap='round';
+  cx.beginPath(); cx.moveTo(x,groundY-(isDuck?12:4)); cx.lineTo(tx,ty); cx.stroke();
+  cx.strokeStyle=leg2; cx.lineWidth=isDuck?3:4;
+  cx.beginPath(); cx.moveTo(x,groundY-(isDuck?12:4)); cx.lineTo(tx,ty); cx.stroke();
+  const ka=angle*.6+0.4;
+  const fx=tx+Math.sin(ka)*sl, fy=Math.min(groundY,ty+sl*Math.cos(Math.abs(ka)*.5));
+  cx.strokeStyle=leg1; cx.lineWidth=isDuck?5:6;
+  cx.beginPath(); cx.moveTo(tx,ty); cx.lineTo(fx,fy); cx.stroke();
+  if(fy>=groundY-3){
+    cx.fillStyle=bird.ironBird?'#506080':'#8b6020';
+    cx.beginPath(); cx.moveTo(fx-8,groundY); cx.lineTo(fx+10,groundY-2); cx.lineTo(fx+12,groundY+1); cx.lineTo(fx-6,groundY+2); cx.closePath(); cx.fill();
+    cx.strokeStyle=bird.ironBird?'#304060':'#5a3a10'; cx.lineWidth=1.5;
+    for(let c=0;c<2;c++){ cx.beginPath(); cx.moveTo(fx+10-c*5,groundY-1); cx.lineTo(fx+14-c*5,groundY+2); cx.stroke(); }
+  }
+}
+
+// ── Announce overlay ──
+function drawAnnounce(){
+  if(!announce||announce.timer<=0) return;
+  const alpha=Math.min(1, announce.timer/30);
+  cx.save();
+  cx.globalAlpha=alpha;
+  cx.fillStyle='rgba(20,15,40,0.7)';
+  rr(CW/2-130,GY/2-52,260,38,10);
+  cx.fillStyle=announce.color||'#fff';
+  cx.font='bold 15px -apple-system,sans-serif';
+  cx.textAlign='center';
+  cx.fillText(announce.text,CW/2,GY/2-28);
+  cx.textAlign='left'; cx.restore();
+  announce.timer--;
+}
+
+// ── Start/Dead overlay ──
+function drawOverlay(){
+  cx.save();
+  cx.fillStyle='rgba(20,15,40,0.75)';
+  rr(CW/2-160,CH/2-42,320,84,14);
+  cx.fillStyle='#fff'; cx.font='bold 17px -apple-system,sans-serif'; cx.textAlign='center';
+  if(st==='idle'){
+    cx.fillText('🦤 Bấm Nhảy để bắt đầu!',CW/2,CH/2-14);
+    cx.font='12px -apple-system,sans-serif'; cx.fillStyle='rgba(255,255,255,0.6)';
+    cx.fillText('↑ nhảy · ↓↓ xuống hầm lấy giáp · 🪙+3đ',CW/2,CH/2+10);
+    cx.fillText('Giáp sắt: cúi = miễn nhiễm 10s',CW/2,CH/2+28);
+  }
+  if(st==='dead'){
+    cx.fillText('💥 Va chạm! '+Math.floor(sc)+'đ',CW/2,CH/2-14);
+    cx.font='13px -apple-system,sans-serif'; cx.fillStyle='rgba(255,255,255,0.6)';
+    cx.fillText('Đang tải bảng xếp hạng...',CW/2,CH/2+10);
+  }
+  cx.textAlign='left'; cx.restore();
+}
+
+function updHUD(){
+  document.getElementById('score-el').textContent=String(Math.floor(sc)).padStart(5,'0');
+  document.getElementById('hi-el').textContent='Kỷ lục: '+String(Math.floor(hi)).padStart(5,'0');
+  document.getElementById('speed-el').textContent='×'+sm.toFixed(1);
+  if(bird.armor) updateArmorBar();
+}
+
+// ═══════════════════════════════════════════
+// MAIN LOOP
+// ═══════════════════════════════════════════
+function loop(){
+  requestAnimationFrame(loop);
+  cx.clearRect(0,0,CW,CH);
+
+  drawSky();
+  if(!bird.underground) clouds.forEach(drawCloud);
+  drawGround();
+  if(tunnel) drawTunnelSurface(tunnel);
+
+  if(st==='running'){
+    fr++;
+    // Score: ~1đ/s * speedMultiplier
+    sc += sm/60;
+
+    // Speed: +0.1 mỗi 50đ
+    const newSm = 1.0 + Math.floor(sc/50)*0.1;
+    if(newSm!==sm){ sm=newSm; spd=5*sm; }
+
+    bird.run++;
+    if(bird.duckCooldown>0) bird.duckCooldown--;
+
+    // Armor countdown
+    if(bird.armor){
+      bird.armorTimer--;
+      bird.armorFlash++;
+      if(bird.armorTimer<=0){
+        bird.armor=false;
+        snd.crack();
+        setAnnounce('💔 Vỡ giáp! Cẩn thận!','#e04020',90);
+        updateArmorBar();
+      }
+    }
+
+    // Physics
+    const curGY = bird.underground ? UG_GY : GY;
+    if(!bird.underground){
+      bird.vy += GRAV; bird.y += bird.vy;
+      if(bird.y >= GY){ if(bird.vy>3) snd.land(); bird.y=GY; bird.vy=0; }
+    }
+
+    // Clouds
+    clouds.forEach(c=>c.x-=c.sp);
+    clouds=clouds.filter(c=>c.x>-160);
+    if(Math.random()<.005) clouds.push(mkCloud(CW+10));
+
+    // Ground
+    ground.forEach(g=>g.x-=spd);
+    ground=ground.filter(g=>g.x>-30);
+    while(ground.length<22) ground.push(mkGrass((ground[ground.length-1]?.x||0)+60+Math.random()*20));
+
+    // ── Tunnel management ──
+    spawnTunnel();
+    if(tunnel){
+      tunnel.x -= spd;
+      if(tunnel.armorX>0) tunnel.armorX -= spd;
+      // Nếu đang trong hầm, đà điểu ra cuối hầm
+      if(bird.underground && bird.x > tunnel.x + tunnel.len - 20){
+        exitTunnel();
+        tunnel=null;
+      }
+      // Hầm trôi qua màn hình mà không vào → xóa
+      if(tunnel && tunnel.x+tunnel.len < -10) tunnel=null;
+    }
+
+    // ── Obstacles (không spawn trong hầm) ──
+    if(!bird.underground) spawnObs();
+    obs.forEach(o=>{
+      o.x-=spd;
+      if(o.tp==='bird'){o.wf++;if(o.wf>12){o.wup=!o.wup;o.wf=0;}}
+    });
+    obs=obs.filter(o=>o.x>-80);
+
+    // ── Coins ──
+    spawnCoin();
+    coins.forEach(c=>{ c.x-=spd; c.bob+=0.08;
+      if(hitCoin(c)){ c.collected=true; sc+=3; snd.coin();
+        for(let i=0;i<10;i++){const a=Math.random()*Math.PI*2; parts.push({x:c.x,y:c.y,vx:Math.cos(a)*3,vy:Math.sin(a)*3-1,life:1,r:3,c:'#f8c840'});}
+      }
+    });
+    coins=coins.filter(c=>!c.collected&&c.x>-20);
+
+    // ── Hit detection ──
+    let dead=false;
+    for(const o of obs){
+      if(hitObs(o)){
+        // Iron bird + cúi = miễn nhiễm (nhưng tiêu giáp)
+        if(bird.ironBird && bird.duck && !bird.armor===false){
+          // ironBird without active armor → dead
+        }
+        if(!bird.armor){ dead=true; break; }
+      }
+    }
+
+    if(dead){
+      st='dead';
+      if(Math.floor(sc)>hi) hi=Math.floor(sc);
+      for(let i=0;i<28;i++){const a=Math.random()*Math.PI*2,sp=1+Math.random()*5;const hues=['#e8a87c','#c47b4a','#f0c090'];parts.push({x:bird.x+22,y:bird.y-32,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2.5,life:1,r:2+Math.random()*4,c:hues[Math.floor(Math.random()*3)]});}
+      snd.hit(); stopBg();
+      setTimeout(()=>showLB(), 900);
+    }
+
+    // Milestone
+    const pm=Math.floor((sc-sm/60)/100), cm=Math.floor(sc/100);
+    if(cm>pm&&cm>0){ snd.mile(); setAnnounce('🏅 '+cm*100+' điểm! Tốc độ ×'+sm.toFixed(1),'#6080e0',80); }
+
+    parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.22;p.life-=0.034;});
+    parts=parts.filter(p=>p.life>0);
+  } else {
+    clouds.forEach(c=>c.x-=0.2);
+    clouds=clouds.filter(c=>c.x>-160);
+    if(Math.random()<.003) clouds.push(mkCloud(CW+10));
+    ground.forEach(g=>g.x-=0.4);
+    ground=ground.filter(g=>g.x>-30);
+    while(ground.length<22) ground.push(mkGrass((ground[ground.length-1]?.x||0)+62));
+  }
+
+  // Draw obstacles (surface only when not underground)
+  if(st!=='idle'){
+    if(!bird.underground){
+      obs.forEach(o=>{
+        if(o.tp==='cac') drawCac(o);
+        else if(o.tp==='bird') drawFlyBird(o);
+        else if(o.tp==='ceil') drawCeil(o);
+      });
+    }
+    coins.forEach(c=>drawCoin(c));
+  }
+
+  if(tunnel) drawTunnelUG(tunnel);
+  drawOstrich();
+
+  parts.forEach(p=>{ cx.globalAlpha=p.life*.9; cx.fillStyle=p.c; cx.beginPath(); cx.arc(p.x,p.y,p.r,0,Math.PI*2); cx.fill(); });
+  cx.globalAlpha=1;
+
+  drawAnnounce();
+  if(st!=='running') drawOverlay();
+  updHUD();
+}
+
+
+// ═══════════════════════════════════════════
+// LEADERBOARD  (localStorage)
+// ═══════════════════════════════════════════
+// LB_KEY handled server-side
+const PLAYER_KEY = 'dino_player_v1';
+let playerName = '';
+let playerGames = 0;
+
+// ── Leaderboard: API với fallback localStorage ──
+const API = '/api/leaderboard';
+const LB_LOCAL = 'dino_lb_local';
+
+// Fallback: đọc/ghi localStorage
+function localLoadLB(){
+  try{ return JSON.parse(localStorage.getItem(LB_LOCAL)||'[]'); } catch(e){ return []; }
+}
+function localSaveLB(lb){
+  try{ localStorage.setItem(LB_LOCAL, JSON.stringify(lb)); } catch(e){}
+}
+function localSubmit(name, score){
+  let lb = localLoadLB();
+  const idx = lb.findIndex(e=>e.name===name);
+  if(idx>=0){ if(score>lb[idx].score) lb[idx].score=Math.floor(score); }
+  else lb.push({name, score:Math.floor(score)});
+  lb.sort((a,b)=>b.score-a.score);
+  localSaveLB(lb);
+  const rank = lb.findIndex(e=>e.name===name)+1;
+  return {rank, data:lb.slice(0,10)};
+}
+
+async function submitAndGetLB(name, score){
+  // Luôn lưu local trước
+  const local = localSubmit(name, score);
+  try{
+    const ctrl = new AbortController();
+    setTimeout(()=>ctrl.abort(), 4000); // timeout 4s
+    const r = await fetch(API, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({name, score: Math.floor(score)}),
+      signal: ctrl.signal
+    });
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j = await r.json();
+    if(j.ok) return {rank:j.rank, data:j.data, source:'api'};
+    throw new Error(j.error||'API error');
+  } catch(e){
+    console.warn('API failed, using local LB:', e.message);
+    return {...local, source:'local'};
+  }
+}
+
+async function loadLB(){
+  try{
+    const ctrl = new AbortController();
+    setTimeout(()=>ctrl.abort(), 4000);
+    const r = await fetch(API, {signal:ctrl.signal});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const j = await r.json();
+    if(j.ok) return j.data;
+    throw new Error(j.error);
+  } catch(e){
+    console.warn('loadLB API failed, using local:', e.message);
+    return localLoadLB().slice(0,10);
+  }
+}
+
+function loadPlayer(){
+  try{ return localStorage.getItem(PLAYER_KEY)||''; } catch(e){ return ''; }
+}
+function savePlayer(name){
+  try{ localStorage.setItem(PLAYER_KEY, name); } catch(e){}
+}
+
+function getPlayerEntry(lb){
+  return lb.find(e=>e.name===playerName) || null;
+}
+
+// submitScore được gộp vào showLB qua submitAndGetLB
+async function submitScore(score){ /* no-op, handled in showLB */ }
+
+function myRank(lb){
+  const idx = lb.findIndex(e=>e.name===playerName);
+  return idx>=0 ? idx+1 : 99;
+}
+
+function rankEmoji(rank){
+  if(rank===1) return '🥇';
+  if(rank===2) return '🥈';
+  if(rank===3) return '🥉';
+  return rank+'';
+}
+
+// ── Name modal ──
+function showNameModal(){
+  const m = document.getElementById('name-modal');
+  m.classList.add('show');
+  const inp = document.getElementById('name-input');
+  inp.value = '';
+  document.getElementById('name-err').textContent='';
+  inp.focus();
+  inp.addEventListener('input', validateNameInput);
+  inp.addEventListener('keydown', e=>{ if(e.key==='Enter') submitName(); });
+}
+
+async function validateNameInput(){
+  const val = document.getElementById('name-input').value.trim();
+  const err = document.getElementById('name-err');
+  const btn = document.getElementById('name-ok');
+  if(val.length < 4){ err.textContent='Tên phải ít nhất 4 ký tự'; btn.disabled=true; return; }
+  if(val.length > 15){ err.textContent='Tên tối đa 15 ký tự'; btn.disabled=true; return; }
+  // Check cả server lẫn local
+  const [apiLb, localLb] = await Promise.all([
+    loadLB().catch(()=>[]),
+    Promise.resolve(localLoadLB())
+  ]);
+  const allNames = [...new Set([...apiLb, ...localLb].map(e=>e.name.toLowerCase()))].slice(0,10);
+  if(allNames.includes(val.toLowerCase()) && val.toLowerCase() !== playerName.toLowerCase()){
+    err.textContent='Tên đã có trong top 10, chọn tên khác'; btn.disabled=true; return;
+  }
+  err.textContent=''; btn.disabled=false;
+}
+
+async function submitName(){
+  const val = document.getElementById('name-input').value.trim();
+  if(val.length<4||val.length>15) return;
+  const lb = await loadLB();
+  const top10names = lb.slice(0,10).map(e=>e.name.toLowerCase());
+  if(top10names.includes(val.toLowerCase()) && val.toLowerCase() !== playerName.toLowerCase()) return;
+  playerName = val;
+  savePlayer(val);
+  document.getElementById('name-modal').classList.remove('show');
+  // Start game
+  init(); startBg();
+}
+
+function hideNameModal(){
+  document.getElementById('name-modal').classList.remove('show');
+}
+
+// ── Leaderboard display ──
+async function showLB(){
+  if(!playerName){ init(); startBg(); return; }
+  // Hiện modal ngay với loading state
+  document.getElementById('lb-list').innerHTML = '<div style="text-align:center;padding:24px;color:#8070a8;font-size:13px">⏳ Đang tải...</div>';
+  document.getElementById('lb-you-row').innerHTML = '';
+  document.getElementById('lb-modal').classList.add('show');
+
+  // Gọi API: submit điểm + lấy bảng xếp hạng
+  const result = await submitAndGetLB(playerName, sc);
+  const lb = result.data;
+  const top10 = lb.slice(0,10);
+  const rank = result.rank;
+  const myEntry = lb.find(e=>e.name===playerName) || null;
+  // Hiện badge nếu đang dùng local fallback
+  const isLocal = result.source==='local';
+  document.querySelector('#lb-box .sub').textContent = isLocal
+    ? '📴 Offline — dữ liệu cục bộ'
+    : 'Top 10 người chơi xuất sắc nhất';
+
+  let html = '';
+  top10.forEach((e,i)=>{
+    const isMe = e.name===playerName;
+    let cls='lb-row';
+    if(i===0) cls+=' top1'; else if(i===1) cls+=' top2'; else if(i===2) cls+=' top3';
+    if(isMe) cls+=' me';
+    html+=`<div class="${cls}">
+      <div class="lb-rank">${rankEmoji(i+1)}</div>
+      <div class="lb-name">${e.name}${isMe?' 👈':''}</div>
+      <div class="lb-score">${String(e.score).padStart(5,'0')}</div>
+    </div>`;
+  });
+  document.getElementById('lb-list').innerHTML = html;
+
+  // Player row below if not in top 10
+  let youHtml = '';
+  if(rank > 10 && myEntry){
+    youHtml = `<div class="lb-you">Vị trí của bạn: <strong>#${rank}</strong> · Điểm cao nhất: ${String(myEntry.score).padStart(5,'0')}đ</div>`;
+  } else if(rank > 10){
+    youHtml = `<div class="lb-you">Vị trí của bạn: <strong>#${rank}</strong> (ngoài top 10)</div>`;
+  } else if(rank<=10 && myEntry){
+    youHtml = `<div class="lb-you">Bạn đang ở <strong>#${rank}</strong> trong top 10! 🎉</div>`;
+  }
+  document.getElementById('lb-you-row').innerHTML = youHtml;
+
+  // modal đã show từ đầu
+}
+
+function closeLB(){
+  document.getElementById('lb-modal').classList.remove('show');
+  // Ask for new name or restart
+  if(playerName){
+    init(); startBg();
+  } else {
+    showNameModal();
+  }
+}
+
+// ── Override init to require name ──
+const _origInit = init;
+window.init = function(){
+  if(!playerName){ showNameModal(); return; }
+  playerGames++;
+  _origInit();
+};
+
+// ── Override dead state to show LB ──
+// Patch into the game-over detection
+const _origStopBg = stopBg;
+
+// Boot
+for(let i=0;i<5;i++) clouds.push(mkCloud(Math.random()*600));
+for(let i=0;i<20;i++) ground.push(mkGrass(i*62));
+// Load saved player name
+const _saved = loadPlayer();
+if(_saved) playerName = _saved;
+// Dùng Vercel API cho leaderboard
+if(!playerName){
+  setTimeout(showNameModal, 200);
+}
+loop();
+</script>
+</body>
+</html>
