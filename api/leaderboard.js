@@ -12,7 +12,7 @@ export default async function handler(req, res) {
 
   if (req.method === 'GET') {
     try {
-      const lb = await redis.get(LB_KEY) || [];
+      const lb = (await redis.get(LB_KEY)) || [];
       return res.status(200).json({ ok: true, data: lb.slice(0, 10) });
     } catch (e) {
       return res.status(500).json({ ok: false, error: e.message });
@@ -22,14 +22,18 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { name, score } = req.body;
+
       if (!name || typeof score !== 'number') {
         return res.status(400).json({ ok: false, error: 'Thiếu name hoặc score' });
       }
       if (name.length < 4 || name.length > 15) {
-        return res.status(400).json({ ok: false, error: 'Tên không hợp lệ' });
+        return res.status(400).json({ ok: false, error: 'Tên phải từ 4–15 ký tự' });
+      }
+      if (score < 0 || score > 999999) {
+        return res.status(400).json({ ok: false, error: 'Score không hợp lệ' });
       }
 
-      let lb = await redis.get(LB_KEY) || [];
+      let lb = (await redis.get(LB_KEY)) || [];
 
       const idx = lb.findIndex(e => e.name === name);
       if (idx >= 0) {
@@ -39,6 +43,10 @@ export default async function handler(req, res) {
       }
 
       lb.sort((a, b) => b.score - a.score);
+
+      // Giới hạn tối đa 100 người trong DB
+      if (lb.length > 100) lb = lb.slice(0, 100);
+
       await redis.set(LB_KEY, lb);
 
       const rank = lb.findIndex(e => e.name === name) + 1;
