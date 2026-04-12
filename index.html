@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Đà Điểu Chạy</title>
+<title>Ostrich Run</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;touch-action:none;background:#e8e4f0}
@@ -20,6 +20,8 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
 .gbtn:active{background:#ede8f8}
 #jump-btn{border-right:.75px solid #d8d0e0}
 #duck-btn{border-left:.75px solid #d8d0e0}
+#pause-btn{border-left:.75px solid #d8d0e0;flex:0 0 62px;position:relative}
+#pause-countdown{position:absolute;top:4px;right:6px;font-size:10px;font-weight:700;color:#9070d0;display:none}
 #hint{text-align:center;margin-top:7px;font-size:11px;color:#ccc;line-height:1.6}
 @media(orientation:landscape){body{padding:3px 8px}.gbtn{height:46px;font-size:13px}#hint{display:none}}
 
@@ -85,9 +87,9 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
 <body>
 <div id="wrap">
   <div id="hud">
-    <span>Điểm: <strong id="score-el">00000</strong></span>
+    <span>Score: <strong id="score-el">00000</strong></span>
     <div id="armor-bar">🛡️ <div id="armor-track"><div id="armor-fill" style="width:100%"></div></div></div>
-    <span id="hi-el">Kỷ lục: 00000</span>
+    <span id="hi-el">Best: 00000</span>
     <span style="display:flex;align-items:center;gap:6px">
       <span id="speed-el">×1.0</span>
       <button id="mute-btn" onclick="toggleMute()" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;color:#bbb">🔊</button>
@@ -96,34 +98,37 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
   <canvas id="gc"></canvas>
   <div id="btns">
     <button class="gbtn" id="jump-btn">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 13V3M3 8l5-5 5 5" stroke="#3a3848" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Nhảy
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 13V3M3 8l5-5 5 5" stroke="#3a3848" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
     <button class="gbtn" id="duck-btn">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8l5 5 5-5" stroke="#3a3848" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      Cúi
+      <svg width="20" height="20" viewBox="0 0 16 16" fill="none"><path d="M8 3v10M3 8l5 5 5-5" stroke="#3a3848" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <button class="gbtn" id="pause-btn" onclick="togglePause()">
+      <svg id="pause-icon" width="20" height="20" viewBox="0 0 16 16" fill="none"><rect x="3" y="2" width="4" height="12" rx="1.5" fill="#3a3848"/><rect x="9" y="2" width="4" height="12" rx="1.5" fill="#3a3848"/></svg>
+      <svg id="resume-icon" width="20" height="20" viewBox="0 0 16 16" fill="none" style="display:none"><path d="M4 2l10 6-10 6V2z" fill="#3a3848"/></svg>
+      <span id="pause-countdown"></span>
     </button>
   </div>
-  <div id="hint">💻 Space/↑ nhảy · ↓ cúi (2× cúi = xuống hầm) · 🪙+3đ · 🛡️ hầm=giáp sắt</div>
+  <div id="hint">💻 Space/↑ jump · ↓↓ enter tunnel · 🪙+3pts · 🛡️ armor in tunnel</div>
 
   <!-- Leaderboard modal -->
   <div id="lb-modal">
     <div id="lb-box">
-      <h2>🏆 Bảng Xếp Hạng</h2>
-      <div class="sub">Top 10 người chơi xuất sắc nhất</div>
+      <h2>🏆 Leaderboard</h2>
+      <div class="sub">Top 10 best players</div>
       <div id="lb-list"></div>
       <div id="lb-you-row"></div>
-      <button id="lb-close" onclick="closeLB()">Chơi lại</button>
+      <button id="lb-close" onclick="closeLB()">Play Again</button>
     </div>
   </div>
   <!-- Name input modal -->
   <div id="name-modal">
     <div id="name-box">
-      <h2>🦤 Đặt tên người chơi</h2>
-      <p>Tên từ 4–15 ký tự<br>Không trùng với top 10</p>
-      <input id="name-input" maxlength="15" placeholder="Tên của bạn..." autocomplete="off" spellcheck="false"/>
+      <h2>🦤 Enter Your Name</h2>
+      <p>4–15 characters<br>Must not match a top 10 player</p>
+      <input id="name-input" maxlength="15" placeholder="Your name..." autocomplete="off" spellcheck="false"/>
       <div id="name-err"></div>
-      <button id="name-ok" onclick="submitName()">Xác nhận ✓</button>
+      <button id="name-ok" onclick="submitName()">Confirm ✓</button>
     </div>
   </div>
 </div>
@@ -244,6 +249,7 @@ function toggleMute(){
 // GAME STATE
 // ═══════════════════════════════════════════
 let st='idle', sc=0, hi=0, fr=0, sm=1, spd=5;
+let paused=false, pauseTimer=0, pauseInterval=null;
 
 // Ostrich
 let bird={
@@ -279,6 +285,11 @@ function init(){
   obs=[]; coins=[]; parts=[]; tunnel=null; lastTunnelScore=0; announce=null;
   clouds=[]; for(let i=0;i<5;i++) clouds.push(mkCloud(Math.random()*CW));
   ground=[]; for(let i=0;i<20;i++) ground.push(mkGrass(i*65));
+  // Reset pause
+  paused=false; clearInterval(pauseInterval); pauseInterval=null; pauseTimer=0;
+  document.getElementById('pause-icon').style.display='';
+  document.getElementById('resume-icon').style.display='none';
+  document.getElementById('pause-countdown').style.display='none';
   st='running';
   updateArmorBar();
 }
@@ -422,7 +433,7 @@ function enterTunnel(){
   bird.vy=0;
   bird.duck=true;
   snd.enter();
-  setAnnounce('⛏️ Vào hầm!', '#8060c0', 80);
+  setAnnounce('⛏️ Entering tunnel!', '#8060c0', 80);
 }
 
 function exitTunnel(){
@@ -431,7 +442,7 @@ function exitTunnel(){
   bird.vy=0;
   bird.duck=false;
   obs=[]; // xóa chướng ngại vật khi ra hầm
-  setAnnounce('🌟 Ra khỏi hầm!', '#40a060', 90);
+  setAnnounce('🌟 Out of tunnel!', '#40a060', 90);
 }
 
 // ═══════════════════════════════════════════
@@ -443,7 +454,7 @@ function giveArmor(){
   bird.armorTimer=600; // 10s * 60fps
   bird.armorFlash=0;
   snd.armor();
-  setAnnounce('⚔️ Chim Sắt! Giáp bất tử 10s!', '#d07820', 150);
+  setAnnounce('⚔️ Iron Bird! Armor active 10s!', '#d07820', 150);
   updateArmorBar();
 }
 
@@ -466,11 +477,48 @@ function setAnnounce(text,color,frames){
 }
 
 // ═══════════════════════════════════════════
+// PAUSE
+// ═══════════════════════════════════════════
+function togglePause(){
+  if(st!=='running' && !paused) return;
+  resumeAC();
+  if(!paused){
+    // Pause
+    paused=true;
+    stopBg();
+    pauseTimer=10;
+    document.getElementById('pause-icon').style.display='none';
+    document.getElementById('resume-icon').style.display='';
+    const cd=document.getElementById('pause-countdown');
+    cd.style.display='block'; cd.textContent=pauseTimer+'s';
+    pauseInterval=setInterval(()=>{
+      pauseTimer--;
+      cd.textContent=pauseTimer+'s';
+      if(pauseTimer<=0) resumeGame();
+    },1000);
+  } else {
+    resumeGame();
+  }
+}
+
+function resumeGame(){
+  if(!paused) return;
+  paused=false;
+  clearInterval(pauseInterval); pauseInterval=null;
+  document.getElementById('pause-icon').style.display='';
+  document.getElementById('resume-icon').style.display='none';
+  const cd=document.getElementById('pause-countdown');
+  cd.style.display='none'; cd.textContent='';
+  startBg();
+}
+
+// ═══════════════════════════════════════════
 // INPUT WIRING
 // ═══════════════════════════════════════════
 document.addEventListener('keydown',e=>{
   if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump();}
   if(e.code==='ArrowDown'){e.preventDefault();duckPress();}
+  if(e.code==='KeyP'){e.preventDefault();togglePause();}
 });
 document.addEventListener('keyup',e=>{
   if(e.code==='ArrowDown') duckRelease();
@@ -606,9 +654,9 @@ function drawTunnelSurface(t){
     cx.fillStyle='#f8d080';
     cx.font='bold 14px -apple-system,sans-serif';
     cx.textAlign='center';
-    cx.fillText('⬇⬇ BẤM CÚI 2 LẦN để vào hầm!',CW/2,GY-60);
+    cx.fillText('⬇⬇ DUCK TWICE to enter tunnel!',CW/2,GY-60);
     cx.font='11px -apple-system,sans-serif'; cx.fillStyle='rgba(255,220,100,0.8)';
-    cx.fillText('🛡️ Có giáp sắt bên trong',CW/2,GY-44);
+    cx.fillText('🛡️ Iron armor inside',CW/2,GY-44);
     cx.globalAlpha=1;
     cx.textAlign='left';
   }
@@ -643,20 +691,37 @@ function drawTunnelUG(t){
   }
 }
 
-// ── Cactus ──
+// ── Ostrich Egg obstacle ──
 function drawCac(o){
-  const bx=o.x,by=GY; cx.save();
-  cx.fillStyle='rgba(0,0,0,0.07)'; cx.beginPath(); cx.ellipse(bx+o.w/2,by+3,o.w*.6,4,0,0,Math.PI*2); cx.fill();
-  const sg=cx.createLinearGradient(bx+6,0,bx+18,0);
-  sg.addColorStop(0,'#4a9040'); sg.addColorStop(.4,'#5cb050'); sg.addColorStop(1,'#3a7030');
-  cx.fillStyle=sg;
-  rr(bx+6,by-o.h,12,o.h,6);
-  rr(bx-3,by-Math.round(o.h*.62),10,7,4); rr(bx-3,by-Math.round(o.h*.62)-16,7,20,4);
-  cx.fillStyle='#6cc860'; cx.fillRect(bx-1,by-Math.round(o.h*.62)-14,3,12); cx.fillRect(bx+8,by-o.h+1,3,o.h*.5);
-  cx.fillStyle=sg;
-  if(o.cl===2){
-    const h2=Math.round(o.h*.8); rr(bx+24,by-h2,10,h2,5); rr(bx+22,by-Math.round(o.h*.48),14,6,3); rr(bx+32,by-Math.round(o.h*.48)-13,7,17,4);
-    cx.fillStyle='#6cc860'; cx.fillRect(bx+25,by-h2+1,3,h2*.6);
+  const bx=o.x, by=GY; cx.save();
+  // Shadow
+  cx.fillStyle='rgba(0,0,0,0.12)';
+  cx.beginPath(); cx.ellipse(bx+o.w/2, by+4, o.w*.55, 5, 0, 0, Math.PI*2); cx.fill();
+
+  const drawEgg = (ex, ey, rx, ry) => {
+    // Main egg body - black with slight sheen
+    const eg = cx.createRadialGradient(ex-rx*0.3, ey-ry*0.35, rx*0.05, ex, ey, rx*1.1);
+    eg.addColorStop(0, '#555560');
+    eg.addColorStop(0.35, '#1a1a22');
+    eg.addColorStop(1, '#0a0a10');
+    cx.fillStyle = eg;
+    cx.beginPath(); cx.ellipse(ex, ey, rx, ry, 0, 0, Math.PI*2); cx.fill();
+    // Highlight gleam
+    cx.fillStyle = 'rgba(200,200,230,0.18)';
+    cx.beginPath(); cx.ellipse(ex-rx*0.28, ey-ry*0.3, rx*0.32, ry*0.22, -0.4, 0, Math.PI*2); cx.fill();
+    // Subtle rim
+    cx.strokeStyle = 'rgba(80,80,100,0.5)'; cx.lineWidth = 1.2;
+    cx.beginPath(); cx.ellipse(ex, ey, rx, ry, 0, 0, Math.PI*2); cx.stroke();
+  };
+
+  if(o.cl === 1){
+    // Single large egg
+    drawEgg(bx+12, by-o.h*0.55, 13, o.h*0.55);
+  } else {
+    // Two eggs: one tall, one shorter beside it
+    const h2 = Math.round(o.h*0.78);
+    drawEgg(bx+12, by-o.h*0.55, 13, o.h*0.55);
+    drawEgg(bx+34, by-h2*0.55, 11, h2*0.55);
   }
   cx.restore();
 }
@@ -754,6 +819,10 @@ function drawOstrich(){
     dg.addColorStop(0,B1); dg.addColorStop(1,B2);
     cx.fillStyle=dg; cx.beginPath(); cx.ellipse(bx+22,by-22,30,16,0,0,Math.PI*2); cx.fill();
     cx.fillStyle='rgba(255,255,255,0.08)'; cx.beginPath(); cx.ellipse(bx+20,by-28,24,8,-0.1,0,Math.PI*2); cx.fill();
+    // Small ducked wings
+    cx.fillStyle=iron?'rgba(100,130,170,0.7)':'rgba(60,60,100,0.55)';
+    cx.beginPath(); cx.ellipse(bx+10,by-30,9,5,0.5,0,Math.PI*2); cx.fill();
+    cx.beginPath(); cx.ellipse(bx+32,by-28,8,4,-0.4,0,Math.PI*2); cx.fill();
     // Neck forward
     cx.strokeStyle=N1; cx.lineWidth=10; cx.lineCap='round';
     cx.beginPath(); cx.moveTo(bx+44,by-22); cx.quadraticCurveTo(bx+52,by-28,bx+64,by-26); cx.stroke();
@@ -767,13 +836,13 @@ function drawOstrich(){
     cx.fillStyle='#fff'; cx.beginPath(); cx.arc(bx+72,by-30,3,0,Math.PI*2); cx.fill();
     cx.fillStyle='#111'; cx.beginPath(); cx.arc(bx+73,by-30,1.8,0,Math.PI*2); cx.fill();
     cx.fillStyle='#5af'; cx.beginPath(); cx.arc(bx+73.5,by-30.5,0.8,0,Math.PI*2); cx.fill();
-    // Legs
-    drawLeg(bx+14,by,Math.sin(run*0.4)*0.5+0.3,true);
-    drawLeg(bx+26,by,-Math.sin(run*0.4)*0.5+0.1,true);
+    // 2 legs only
+    drawLeg(bx+16,by,Math.sin(run*0.4)*0.5+0.3,true);
+    drawLeg(bx+28,by,-Math.sin(run*0.4)*0.5+0.1,true);
     // Iron armor plates
     if(iron){ cx.fillStyle='rgba(100,120,160,0.7)'; cx.fillRect(bx+2,by-36,16,10); cx.fillRect(bx+18,by-34,16,10); }
   } else {
-    // Tail
+    // Tail feathers
     cx.fillStyle=B1; cx.beginPath(); cx.ellipse(bx+2,by-30,16,10,0.5,0,Math.PI*2); cx.fill();
     for(let i=0;i<6;i++){
       cx.strokeStyle=`rgba(${iron?'80,90,120':'50,50,80'},${0.5+i*0.08})`; cx.lineWidth=1.5;
@@ -784,6 +853,27 @@ function drawOstrich(){
     bg2.addColorStop(0,B3); bg2.addColorStop(.6,B1); bg2.addColorStop(1,B2);
     cx.fillStyle=bg2; cx.beginPath(); cx.ellipse(bx+22,by-32,26,22,0,0,Math.PI*2); cx.fill();
     cx.fillStyle='rgba(255,255,255,0.08)'; cx.beginPath(); cx.ellipse(bx+20,by-38,20,10,-0.2,0,Math.PI*2); cx.fill();
+    // Small wings on body sides (vestigial)
+    const wingFlap = onG ? Math.sin(run*0.28)*0.3 : 0.1;
+    // Left wing
+    cx.save();
+    cx.translate(bx+6, by-36);
+    cx.rotate(-0.3 - wingFlap);
+    cx.fillStyle=iron?'rgba(100,130,170,0.75)':'rgba(55,55,90,0.7)';
+    cx.beginPath(); cx.ellipse(0,0,14,6,0,0,Math.PI*2); cx.fill();
+    cx.fillStyle='rgba(255,255,255,0.06)'; cx.beginPath(); cx.ellipse(-2,-2,10,3,0,0,Math.PI*2); cx.fill();
+    // Wing feather tips
+    cx.strokeStyle=iron?'rgba(120,150,190,0.5)':'rgba(70,70,110,0.6)'; cx.lineWidth=1.2;
+    for(let i=0;i<3;i++){ cx.beginPath(); cx.moveTo(-8+i*5,3); cx.lineTo(-10+i*5,9); cx.stroke(); }
+    cx.restore();
+    // Right wing (other side, smaller)
+    cx.save();
+    cx.translate(bx+38, by-34);
+    cx.rotate(0.25 + wingFlap*0.5);
+    cx.fillStyle=iron?'rgba(90,120,160,0.6)':'rgba(45,45,80,0.55)';
+    cx.beginPath(); cx.ellipse(0,0,11,5,0,0,Math.PI*2); cx.fill();
+    for(let i=0;i<3;i++){ cx.strokeStyle=iron?'rgba(110,140,180,0.4)':'rgba(60,60,100,0.5)'; cx.lineWidth=1; cx.beginPath(); cx.moveTo(-6+i*4,3); cx.lineTo(-7+i*4,8); cx.stroke(); }
+    cx.restore();
     // Back spikes (iron: metal fins)
     if(iron){
       cx.fillStyle='#78899a';
@@ -807,21 +897,17 @@ function drawOstrich(){
     cx.fillStyle='#1a1a2e'; cx.beginPath(); cx.arc(hx+4,hy-3,3,0,Math.PI*2); cx.fill();
     cx.fillStyle='#5af'; cx.beginPath(); cx.arc(hx+4.5,hy-3.5,1.2,0,Math.PI*2); cx.fill();
     cx.fillStyle='#fff'; cx.beginPath(); cx.arc(hx+5.5,hy-5,1,0,Math.PI*2); cx.fill();
-    // Arm
-    cx.fillStyle=B2; cx.fillRect(bx+24,by-32,10,6); cx.fillStyle=B1; cx.fillRect(bx+32,by-30,8,5);
     // Iron armor
     if(iron){
-      // Shoulder plate
       cx.fillStyle='rgba(80,100,140,0.8)'; cx.beginPath(); cx.ellipse(bx+16,by-46,12,8,-0.3,0,Math.PI*2); cx.fill();
-      // Chest plate
       cx.fillStyle='rgba(90,110,150,0.75)'; cx.fillRect(bx+6,by-44,22,16);
       cx.strokeStyle='rgba(140,170,210,0.6)'; cx.lineWidth=1; cx.strokeRect(bx+8,by-42,18,12);
     }
-    // Legs
+    // 2 legs only
     const la=onG?Math.sin(run*.28)*.45:-0.2;
     const la2=onG?Math.sin(run*.28+Math.PI)*.45:0.1;
-    drawLeg(bx+14,by,la,false);
-    drawLeg(bx+26,by,la2,false);
+    drawLeg(bx+16,by,la,false);
+    drawLeg(bx+28,by,la2,false);
   }
   cx.restore();
 }
@@ -872,22 +958,22 @@ function drawOverlay(){
   rr(CW/2-160,CH/2-42,320,84,14);
   cx.fillStyle='#fff'; cx.font='bold 17px -apple-system,sans-serif'; cx.textAlign='center';
   if(st==='idle'){
-    cx.fillText('🦤 Bấm Nhảy để bắt đầu!',CW/2,CH/2-14);
+    cx.fillText('🦤 Press Jump to start!',CW/2,CH/2-14);
     cx.font='12px -apple-system,sans-serif'; cx.fillStyle='rgba(255,255,255,0.6)';
-    cx.fillText('↑ nhảy · ↓↓ xuống hầm lấy giáp · 🪙+3đ',CW/2,CH/2+10);
-    cx.fillText('Giáp sắt: cúi = miễn nhiễm 10s',CW/2,CH/2+28);
+    cx.fillText('↑ jump · ↓↓ enter tunnel · 🪙+3pts',CW/2,CH/2+10);
+    cx.fillText('Iron armor: duck = invincible 10s',CW/2,CH/2+28);
   }
   if(st==='dead'){
-    cx.fillText('💥 Va chạm! '+Math.floor(sc)+'đ',CW/2,CH/2-14);
+    cx.fillText('💥 Crash! '+Math.floor(sc)+' pts',CW/2,CH/2-14);
     cx.font='13px -apple-system,sans-serif'; cx.fillStyle='rgba(255,255,255,0.6)';
-    cx.fillText('Đang tải bảng xếp hạng...',CW/2,CH/2+10);
+    cx.fillText('Loading leaderboard...',CW/2,CH/2+10);
   }
   cx.textAlign='left'; cx.restore();
 }
 
 function updHUD(){
   document.getElementById('score-el').textContent=String(Math.floor(sc)).padStart(5,'0');
-  document.getElementById('hi-el').textContent='Kỷ lục: '+String(Math.floor(hi)).padStart(5,'0');
+  document.getElementById('hi-el').textContent='Best: '+String(Math.floor(hi)).padStart(5,'0');
   document.getElementById('speed-el').textContent='×'+sm.toFixed(1);
   if(bird.armor) updateArmorBar();
 }
@@ -903,6 +989,33 @@ function loop(){
   if(!bird.underground) clouds.forEach(drawCloud);
   drawGround();
   if(tunnel) drawTunnelSurface(tunnel);
+
+  if(paused){
+    // Draw static scene + pause overlay
+    if(st!=='idle'){
+      if(!bird.underground){
+        obs.forEach(o=>{
+          if(o.tp==='cac') drawCac(o);
+          else if(o.tp==='bird') drawFlyBird(o);
+          else if(o.tp==='ceil') drawCeil(o);
+        });
+      }
+      coins.forEach(c=>drawCoin(c));
+    }
+    if(tunnel) drawTunnelUG(tunnel);
+    drawOstrich();
+    // Pause overlay
+    cx.save();
+    cx.fillStyle='rgba(20,15,40,0.72)';
+    rr(CW/2-120,CH/2-38,240,76,14);
+    cx.fillStyle='#fff'; cx.font='bold 18px -apple-system,sans-serif'; cx.textAlign='center';
+    cx.fillText('⏸ Paused',CW/2,CH/2-10);
+    cx.font='12px -apple-system,sans-serif'; cx.fillStyle='rgba(255,255,255,0.6)';
+    cx.fillText('Resumes in '+pauseTimer+'s · Tap ⏸ to resume',CW/2,CH/2+16);
+    cx.textAlign='left'; cx.restore();
+    updHUD();
+    return;
+  }
 
   if(st==='running'){
     fr++;
@@ -923,7 +1036,7 @@ function loop(){
       if(bird.armorTimer<=0){
         bird.armor=false;
         snd.crack();
-        setAnnounce('💔 Vỡ giáp! Cẩn thận!','#e04020',90);
+        setAnnounce('💔 Armor broken! Watch out!','#e04020',90);
         updateArmorBar();
       }
     }
@@ -998,7 +1111,7 @@ function loop(){
 
     // Milestone
     const pm=Math.floor((sc-sm/60)/100), cm=Math.floor(sc/100);
-    if(cm>pm&&cm>0){ snd.mile(); setAnnounce('🏅 '+cm*100+' điểm! Tốc độ ×'+sm.toFixed(1),'#6080e0',80); }
+    if(cm>pm&&cm>0){ snd.mile(); setAnnounce('🏅 '+cm*100+' pts! Speed ×'+sm.toFixed(1),'#6080e0',80); }
 
     parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.22;p.life-=0.034;});
     parts=parts.filter(p=>p.life>0);
@@ -1145,9 +1258,9 @@ async function validateNameInput(){
   const err = document.getElementById('name-err');
   const btn = document.getElementById('name-ok');
   btn.disabled = true;
-  if(val.length < 4){ err.textContent='Tên phải ít nhất 4 ký tự'; return; }
-  if(val.length > 15){ err.textContent='Tên tối đa 15 ký tự'; return; }
-  err.textContent = '⏳ Đang kiểm tra...';
+  if(val.length < 4){ err.textContent='Name must be at least 4 characters'; return; }
+  if(val.length > 15){ err.textContent='Name must be at most 15 characters'; return; }
+  err.textContent = '⏳ Checking...';
   // Debounce: chỉ gọi API sau 500ms không gõ thêm
   clearTimeout(_validateTimer);
   _validateTimer = setTimeout(async ()=>{
@@ -1157,7 +1270,7 @@ async function validateNameInput(){
     ]);
     const allNames = [...new Set([...apiLb, ...localLb].map(e=>e.name.toLowerCase()))].slice(0,10);
     if(allNames.includes(val.toLowerCase()) && val.toLowerCase() !== playerName.toLowerCase()){
-      err.textContent='Tên đã có trong top 10, chọn tên khác'; btn.disabled=true; return;
+      err.textContent='Name already in top 10, choose another'; btn.disabled=true; return;
     }
     err.textContent=''; btn.disabled=false;
   }, 500);
@@ -1184,7 +1297,7 @@ function hideNameModal(){
 async function showLB(){
   if(!playerName){ init(); startBg(); return; }
   // Hiện modal ngay với loading state
-  document.getElementById('lb-list').innerHTML = '<div style="text-align:center;padding:24px;color:#8070a8;font-size:13px">⏳ Đang tải...</div>';
+  document.getElementById('lb-list').innerHTML = '<div style="text-align:center;padding:24px;color:#8070a8;font-size:13px">⏳ Loading...</div>';
   document.getElementById('lb-you-row').innerHTML = '';
   document.getElementById('lb-modal').classList.add('show');
 
@@ -1197,8 +1310,8 @@ async function showLB(){
   // Hiện badge nếu đang dùng local fallback
   const isLocal = result.source==='local';
   document.querySelector('#lb-box .sub').textContent = isLocal
-    ? '📴 Offline — dữ liệu cục bộ'
-    : 'Top 10 người chơi xuất sắc nhất';
+    ? '📴 Offline — local data'
+    : 'Top 10 best players';
 
   let html = '';
   top10.forEach((e,i)=>{
@@ -1217,11 +1330,11 @@ async function showLB(){
   // Player row below if not in top 10
   let youHtml = '';
   if(rank > 10 && myEntry){
-    youHtml = `<div class="lb-you">Vị trí của bạn: <strong>#${rank}</strong> · Điểm cao nhất: ${String(myEntry.score).padStart(5,'0')}đ</div>`;
+    youHtml = `<div class="lb-you">Your rank: <strong>#${rank}</strong> · Best score: ${String(myEntry.score).padStart(5,'0')} pts</div>`;
   } else if(rank > 10){
-    youHtml = `<div class="lb-you">Vị trí của bạn: <strong>#${rank}</strong> (ngoài top 10)</div>`;
+    youHtml = `<div class="lb-you">Your rank: <strong>#${rank}</strong> (outside top 10)</div>`;
   } else if(rank<=10 && myEntry){
-    youHtml = `<div class="lb-you">Bạn đang ở <strong>#${rank}</strong> trong top 10! 🎉</div>`;
+    youHtml = `<div class="lb-you">You are <strong>#${rank}</strong> in top 10! 🎉</div>`;
   }
   document.getElementById('lb-you-row').innerHTML = youHtml;
 
