@@ -1113,8 +1113,7 @@ function getPlayerEntry(lb){
   return lb.find(e=>e.name===playerName) || null;
 }
 
-// submitScore được gộp vào showLB qua submitAndGetLB
-async function submitScore(score){ /* no-op, handled in showLB */ }
+// Score được submit tự động trong showLB() qua submitAndGetLB()
 
 function myRank(lb){
   const idx = lb.findIndex(e=>e.name===playerName);
@@ -1140,22 +1139,28 @@ function showNameModal(){
   inp.addEventListener('keydown', e=>{ if(e.key==='Enter') submitName(); });
 }
 
+let _validateTimer = null;
 async function validateNameInput(){
   const val = document.getElementById('name-input').value.trim();
   const err = document.getElementById('name-err');
   const btn = document.getElementById('name-ok');
-  if(val.length < 4){ err.textContent='Tên phải ít nhất 4 ký tự'; btn.disabled=true; return; }
-  if(val.length > 15){ err.textContent='Tên tối đa 15 ký tự'; btn.disabled=true; return; }
-  // Check cả server lẫn local
-  const [apiLb, localLb] = await Promise.all([
-    loadLB().catch(()=>[]),
-    Promise.resolve(localLoadLB())
-  ]);
-  const allNames = [...new Set([...apiLb, ...localLb].map(e=>e.name.toLowerCase()))].slice(0,10);
-  if(allNames.includes(val.toLowerCase()) && val.toLowerCase() !== playerName.toLowerCase()){
-    err.textContent='Tên đã có trong top 10, chọn tên khác'; btn.disabled=true; return;
-  }
-  err.textContent=''; btn.disabled=false;
+  btn.disabled = true;
+  if(val.length < 4){ err.textContent='Tên phải ít nhất 4 ký tự'; return; }
+  if(val.length > 15){ err.textContent='Tên tối đa 15 ký tự'; return; }
+  err.textContent = '⏳ Đang kiểm tra...';
+  // Debounce: chỉ gọi API sau 500ms không gõ thêm
+  clearTimeout(_validateTimer);
+  _validateTimer = setTimeout(async ()=>{
+    const [apiLb, localLb] = await Promise.all([
+      loadLB().catch(()=>[]),
+      Promise.resolve(localLoadLB())
+    ]);
+    const allNames = [...new Set([...apiLb, ...localLb].map(e=>e.name.toLowerCase()))].slice(0,10);
+    if(allNames.includes(val.toLowerCase()) && val.toLowerCase() !== playerName.toLowerCase()){
+      err.textContent='Tên đã có trong top 10, chọn tên khác'; btn.disabled=true; return;
+    }
+    err.textContent=''; btn.disabled=false;
+  }, 500);
 }
 
 async function submitName(){
