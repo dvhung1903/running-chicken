@@ -837,8 +837,8 @@ function drawOstrich(){
     cx.fillStyle='#111'; cx.beginPath(); cx.arc(bx+73,by-30,1.8,0,Math.PI*2); cx.fill();
     cx.fillStyle='#5af'; cx.beginPath(); cx.arc(bx+73.5,by-30.5,0.8,0,Math.PI*2); cx.fill();
     // 2 legs only
-    drawLeg(bx+16,by,Math.sin(run*0.4)*0.5+0.3,true);
-    drawLeg(bx+28,by,-Math.sin(run*0.4)*0.5+0.1,true);
+    drawLeg(bx+12, by,  Math.sin(run*0.4)*0.5+0.3, true);
+    drawLeg(bx+30, by, -Math.sin(run*0.4)*0.5+0.1, true);
     // Iron armor plates
     if(iron){ cx.fillStyle='rgba(100,120,160,0.7)'; cx.fillRect(bx+2,by-36,16,10); cx.fillRect(bx+18,by-34,16,10); }
   } else {
@@ -903,39 +903,66 @@ function drawOstrich(){
       cx.fillStyle='rgba(90,110,150,0.75)'; cx.fillRect(bx+6,by-44,22,16);
       cx.strokeStyle='rgba(140,170,210,0.6)'; cx.lineWidth=1; cx.strokeRect(bx+8,by-42,18,12);
     }
-    // 2 legs only
-    const la=onG?Math.sin(run*.28)*.45:-0.2;
-    const la2=onG?Math.sin(run*.28+Math.PI)*.45:0.1;
-    drawLeg(bx+16,by,la,false);
-    drawLeg(bx+28,by,la2,false);
+    // 2 legs only — spaced wider, opposite phase
+    const la  = onG ?  Math.sin(run * 0.28) * 0.55 : -0.15;
+    const la2 = onG ? -Math.sin(run * 0.28) * 0.55 :  0.15;
+    drawLeg(bx + 12, by, la,  false);
+    drawLeg(bx + 30, by, la2, false);
   }
   cx.restore();
 }
 
 function px(x,y,w,h,c){ cx.fillStyle=c; cx.fillRect(x,y,w,h); }
 
-function drawLeg(x,groundY,angle,isDuck){
-  const tl=isDuck?18:24, sl=isDuck?16:22;
-  const tx=x+Math.sin(angle)*tl, ty=groundY-tl*Math.cos(Math.abs(angle));
-  const leg1=bird.ironBird?'#7090b0':'#c8a060';
-  const leg2=bird.ironBird?'#90b0d0':'#e8c080';
-  cx.strokeStyle=leg1; cx.lineWidth=isDuck?6:7; cx.lineCap='round';
-  cx.beginPath(); cx.moveTo(x,groundY-(isDuck?12:4)); cx.lineTo(tx,ty); cx.stroke();
-  cx.strokeStyle=leg2; cx.lineWidth=isDuck?3:4;
-  cx.beginPath(); cx.moveTo(x,groundY-(isDuck?12:4)); cx.lineTo(tx,ty); cx.stroke();
-  const ka=angle*.6+0.4;
-  const fx=tx+Math.sin(ka)*sl, fy=Math.min(groundY,ty+sl*Math.cos(Math.abs(ka)*.5));
-  cx.strokeStyle=leg1; cx.lineWidth=isDuck?5:6;
-  cx.beginPath(); cx.moveTo(tx,ty); cx.lineTo(fx,fy); cx.stroke();
-  if(fy>=groundY-3){
-    cx.fillStyle=bird.ironBird?'#506080':'#8b6020';
-    cx.beginPath(); cx.moveTo(fx-8,groundY); cx.lineTo(fx+10,groundY-2); cx.lineTo(fx+12,groundY+1); cx.lineTo(fx-6,groundY+2); cx.closePath(); cx.fill();
-    cx.strokeStyle=bird.ironBird?'#304060':'#5a3a10'; cx.lineWidth=1.5;
-    for(let c=0;c<2;c++){ cx.beginPath(); cx.moveTo(fx+10-c*5,groundY-1); cx.lineTo(fx+14-c*5,groundY+2); cx.stroke(); }
+function drawLeg(x, groundY, angle, isDuck){
+  const thighLen = isDuck ? 16 : 22;
+  const shinLen  = isDuck ? 14 : 20;
+  const legCol   = bird.ironBird ? '#7090b0' : '#c8a060';
+  const legHigh  = bird.ironBird ? '#90b0d0' : '#e8c080';
+  const footCol  = bird.ironBird ? '#506080' : '#8b6020';
+
+  // Thigh: from hip down
+  const hipY = groundY - (isDuck ? 10 : 4);
+  const kneeX = x + Math.sin(angle) * thighLen;
+  const kneeY = hipY + thighLen * Math.cos(Math.abs(angle));
+
+  // Shin: from knee to foot
+  const shinAngle = angle * 0.5 + 0.5;
+  const footX = kneeX + Math.sin(shinAngle) * shinLen;
+  const footY = Math.min(groundY, kneeY + shinLen * Math.cos(Math.abs(shinAngle) * 0.6));
+
+  // Draw thigh
+  cx.strokeStyle = legCol; cx.lineWidth = isDuck ? 6 : 7; cx.lineCap = 'round';
+  cx.beginPath(); cx.moveTo(x, hipY); cx.lineTo(kneeX, kneeY); cx.stroke();
+  cx.strokeStyle = legHigh; cx.lineWidth = isDuck ? 3 : 4;
+  cx.beginPath(); cx.moveTo(x, hipY); cx.lineTo(kneeX, kneeY); cx.stroke();
+
+  // Draw shin
+  cx.strokeStyle = legCol; cx.lineWidth = isDuck ? 5 : 6;
+  cx.beginPath(); cx.moveTo(kneeX, kneeY); cx.lineTo(footX, footY); cx.stroke();
+
+  // Draw foot only when touching ground
+  if(footY >= groundY - 4){
+    cx.fillStyle = footCol;
+    cx.beginPath();
+    cx.moveTo(footX - 7, groundY);
+    cx.lineTo(footX + 11, groundY - 2);
+    cx.lineTo(footX + 13, groundY + 2);
+    cx.lineTo(footX - 5, groundY + 2);
+    cx.closePath(); cx.fill();
+    // Toe lines
+    cx.strokeStyle = bird.ironBird ? '#304060' : '#5a3a10';
+    cx.lineWidth = 1.5;
+    for(let t = 0; t < 2; t++){
+      cx.beginPath();
+      cx.moveTo(footX + 9 - t*5, groundY - 1);
+      cx.lineTo(footX + 13 - t*5, groundY + 2);
+      cx.stroke();
+    }
   }
 }
 
-// ── Announce overlay ──
+// ── Announce overlay (center) ──
 function drawAnnounce(){
   if(!announce||announce.timer<=0) return;
   const alpha=Math.min(1, announce.timer/30);
@@ -949,6 +976,26 @@ function drawAnnounce(){
   cx.fillText(announce.text,CW/2,GY/2-28);
   cx.textAlign='left'; cx.restore();
   announce.timer--;
+}
+
+// ── Top warning banner (speed-up alert) ──
+let warning=null; // {text, timer, color}
+function setWarning(text,color,frames){ warning={text,color,timer:frames}; }
+function drawWarning(){
+  if(!warning||warning.timer<=0) return;
+  const alpha=Math.min(1, warning.timer/20);
+  cx.save();
+  cx.globalAlpha=alpha;
+  // Flashing red/orange background
+  const flashOn = Math.floor(warning.timer/8)%2===0;
+  cx.fillStyle=flashOn?'rgba(200,60,20,0.82)':'rgba(230,100,20,0.78)';
+  rr(CW/2-150,8,300,34,8);
+  cx.fillStyle='#fff';
+  cx.font='bold 13px -apple-system,sans-serif';
+  cx.textAlign='center';
+  cx.fillText(warning.text, CW/2, 31);
+  cx.textAlign='left'; cx.restore();
+  warning.timer--;
 }
 
 // ── Start/Dead overlay ──
@@ -1013,6 +1060,7 @@ function loop(){
     cx.font='12px -apple-system,sans-serif'; cx.fillStyle='rgba(255,255,255,0.6)';
     cx.fillText('Resumes in '+pauseTimer+'s · Tap ⏸ to resume',CW/2,CH/2+16);
     cx.textAlign='left'; cx.restore();
+    drawWarning();
     updHUD();
     return;
   }
@@ -1022,8 +1070,8 @@ function loop(){
     // Score: ~1đ/s * speedMultiplier
     sc += sm/60;
 
-    // Speed: +0.1 mỗi 50đ
-    const newSm = 1.0 + Math.floor(sc/50)*0.1;
+    // Speed: +0.05 every 50 pts (1.0 → 1.05 → 1.10 ...)
+    const newSm = Math.round((1.0 + Math.floor(sc/50)*0.05)*100)/100;
     if(newSm!==sm){ sm=newSm; spd=5*sm; }
 
     bird.run++;
@@ -1063,16 +1111,14 @@ function loop(){
     if(tunnel){
       tunnel.x -= spd;
       if(tunnel.armorX>0) tunnel.armorX -= spd;
-      // Nếu đang trong hầm, đà điểu ra cuối hầm
       if(bird.underground && bird.x > tunnel.x + tunnel.len - 20){
         exitTunnel();
         tunnel=null;
       }
-      // Hầm trôi qua màn hình mà không vào → xóa
       if(tunnel && tunnel.x+tunnel.len < -10) tunnel=null;
     }
 
-    // ── Obstacles (không spawn trong hầm) ──
+    // ── Obstacles ──
     if(!bird.underground) spawnObs();
     obs.forEach(o=>{
       o.x-=spd;
@@ -1093,10 +1139,6 @@ function loop(){
     let dead=false;
     for(const o of obs){
       if(hitObs(o)){
-        // Iron bird + cúi = miễn nhiễm (nhưng tiêu giáp)
-        if(bird.ironBird && bird.duck && !bird.armor===false){
-          // ironBird without active armor → dead
-        }
         if(!bird.armor){ dead=true; break; }
       }
     }
@@ -1109,9 +1151,15 @@ function loop(){
       setTimeout(()=>showLB(), 900);
     }
 
-    // Milestone
+    // Milestone every 100 pts
     const pm=Math.floor((sc-sm/60)/100), cm=Math.floor(sc/100);
-    if(cm>pm&&cm>0){ snd.mile(); setAnnounce('🏅 '+cm*100+' pts! Speed ×'+sm.toFixed(1),'#6080e0',80); }
+    if(cm>pm&&cm>0){ snd.mile(); setAnnounce('🏅 '+cm*100+' pts! Speed ×'+sm.toFixed(2),'#6080e0',80); }
+
+    // Speed-up warning: fires when score crosses the X40, X90, X140... mark (10 pts before each +0.05 step)
+    if(Math.floor((sc-sm/60)%50) < 40 && Math.floor(sc%50) >= 40 && !dead){
+      const nextSpeed = Math.round((sm + 0.05)*100)/100;
+      setWarning('⚠️  Speed increasing soon!  ×'+nextSpeed.toFixed(2)+'  — Stay sharp!','#f0a020',140);
+    }
 
     parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.22;p.life-=0.034;});
     parts=parts.filter(p=>p.life>0);
@@ -1143,6 +1191,7 @@ function loop(){
   cx.globalAlpha=1;
 
   drawAnnounce();
+  drawWarning();
   if(st!=='running') drawOverlay();
   updHUD();
 }
