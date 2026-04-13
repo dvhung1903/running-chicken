@@ -82,6 +82,66 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
   background:#5a3a9a;color:#fff;font-size:15px;font-weight:700;cursor:pointer}
 #name-ok:active{background:#4a2a8a}
 #name-ok:disabled{background:#3a2860;color:#6a5a8a;cursor:not-allowed}
+
+/* ── MENU / PAGE SCREENS ── */
+.page-screen{
+  display:none;position:fixed;inset:0;z-index:20000;
+  background:#0e0a1e;
+  flex-direction:column;align-items:center;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:0 0 40px;
+}
+.page-screen.show{display:flex;}
+.page-header{
+  width:100%;max-width:500px;
+  display:flex;align-items:center;gap:10px;
+  padding:16px 20px 0;
+}
+.page-back{
+  border:none;background:rgba(255,255,255,0.08);color:#c8b0f0;
+  font-size:18px;cursor:pointer;border-radius:10px;
+  width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+}
+.page-back:active{background:rgba(255,255,255,0.15)}
+.page-title{font-size:17px;font-weight:700;color:#e8e0f8;flex:1;}
+.page-body{width:100%;max-width:500px;padding:18px 20px 0;color:#c0b0d8;font-size:14px;line-height:1.7;}
+.page-body h3{font-size:15px;font-weight:700;color:#d8c8f0;margin:18px 0 6px;}
+.page-body p{margin-bottom:10px;color:#a898c0;}
+.page-body a{color:#9878e0;}
+
+/* Menu screen */
+#menu-screen{background:linear-gradient(160deg,#0e0a1e 0%,#1a1030 100%);}
+.menu-hero{text-align:center;padding:40px 20px 24px;}
+.menu-hero .ostrich-icon{font-size:56px;display:block;margin-bottom:8px;}
+.menu-hero h1{font-size:26px;font-weight:700;color:#e8e0f8;letter-spacing:1px;}
+.menu-hero p{font-size:13px;color:#7868a0;margin-top:4px;}
+.menu-btns{width:100%;max-width:360px;padding:0 20px;display:flex;flex-direction:column;gap:10px;}
+.mbtn{
+  width:100%;padding:14px;border-radius:14px;border:none;
+  font-size:15px;font-weight:700;cursor:pointer;
+  display:flex;align-items:center;gap:10px;
+}
+.mbtn-primary{background:#5a3a9a;color:#fff;}
+.mbtn-primary:active{background:#4a2a8a;}
+.mbtn-secondary{background:rgba(255,255,255,0.07);color:#c8b0f0;border:1px solid rgba(200,160,255,0.2);}
+.mbtn-secondary:active{background:rgba(255,255,255,0.12);}
+.mbtn-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.menu-footer{margin-top:24px;text-align:center;font-size:11px;color:#4a3868;}
+.menu-footer a{color:#6a5898;text-decoration:none;}
+
+/* Ad banner placeholder */
+#ad-banner{
+  width:100%;max-width:500px;
+  margin:16px auto 0;
+  background:rgba(255,255,255,0.04);
+  border:1px dashed rgba(255,255,255,0.1);
+  border-radius:10px;
+  min-height:60px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:#3a2860;
+  text-align:center;
+}
 </style>
 </head>
 <body>
@@ -93,6 +153,7 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
     <span style="display:flex;align-items:center;gap:6px">
       <span id="speed-el">×1.0</span>
       <button id="mute-btn" onclick="toggleMute()" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;color:#bbb">🔊</button>
+      <button onclick="showMenu()" style="border:none;background:none;cursor:pointer;font-size:15px;padding:0;color:#bbb" title="Menu">☰</button>
     </span>
   </div>
   <canvas id="gc"></canvas>
@@ -129,6 +190,110 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
       <input id="name-input" maxlength="15" placeholder="Your name..." autocomplete="off" spellcheck="false"/>
       <div id="name-err"></div>
       <button id="name-ok" onclick="submitName()">Confirm ✓</button>
+    </div>
+  </div>
+
+  <!-- ══ MENU SCREEN ══ -->
+  <div id="menu-screen" class="page-screen">
+    <div class="menu-hero">
+      <span class="ostrich-icon">🦤</span>
+      <h1>Ostrich Run</h1>
+      <p>Dodge eggs · Grab armor · Beat the board</p>
+    </div>
+    <!-- Ad banner slot (replace with real ad unit) -->
+    <div id="ad-banner">
+      <!-- INSERT AD CODE HERE -->
+      Advertisement
+    </div>
+    <div class="menu-btns" style="margin-top:20px;">
+      <button class="mbtn mbtn-primary" onclick="hideMenu();resumeFromMenu();">
+        <span class="mbtn-icon">▶</span> Play
+      </button>
+      <button class="mbtn mbtn-secondary" onclick="showPage('about-screen')">
+        <span class="mbtn-icon">ℹ️</span> About
+      </button>
+      <button class="mbtn mbtn-secondary" onclick="showPage('privacy-screen')">
+        <span class="mbtn-icon">🔒</span> Privacy Policy
+      </button>
+      <button class="mbtn mbtn-secondary" onclick="hideMenu();toggleMute();">
+        <span class="mbtn-icon" id="menu-mute-icon">🔊</span> Sound
+      </button>
+    </div>
+    <div class="menu-footer">
+      <p>Version 1.0 &nbsp;·&nbsp; <a href="#" onclick="showPage('privacy-screen');return false;">Privacy</a> &nbsp;·&nbsp; <a href="#" onclick="showPage('about-screen');return false;">About</a></p>
+    </div>
+  </div>
+
+  <!-- ══ ABOUT SCREEN ══ -->
+  <div id="about-screen" class="page-screen">
+    <div class="page-header">
+      <button class="page-back" onclick="showPage('menu-screen')">←</button>
+      <span class="page-title">About Ostrich Run</span>
+    </div>
+    <div class="page-body">
+      <h3>🦤 What is Ostrich Run?</h3>
+      <p>Ostrich Run is an endless runner where you control a cool ostrich dodging black eggs and stone stalactites. Collect coins, dive into underground tunnels, grab iron armor and beak upgrades — and beat the global leaderboard!</p>
+
+      <h3>🎮 How to Play</h3>
+      <p><strong style="color:#d0c0f0">Jump</strong> — Tap ↑ or the Jump button. Press Space / Arrow Up on desktop.</p>
+      <p><strong style="color:#d0c0f0">Duck</strong> — Tap ↓ or the Duck button. Duck twice to enter a tunnel.</p>
+      <p><strong style="color:#d0c0f0">Pause</strong> — Tap ⏸. The game auto-resumes after 10 seconds.</p>
+
+      <h3>⚡ Power-ups</h3>
+      <p>🪙 <strong style="color:#d0c0f0">Coins</strong> — +3 pts each.</p>
+      <p>🛡️ <strong style="color:#d0c0f0">Iron Armor</strong> — Found in tunnels. Makes you invincible for 10s.</p>
+      <p>🦴 <strong style="color:#d0c0f0">Iron Beak</strong> — Gained after leaving a tunnel with armor. Duck into eggs to smash them for 10s.</p>
+
+      <h3>🏆 Leaderboard</h3>
+      <p>Scores are saved online. Your best score is updated automatically after each run. Top 10 players are displayed globally.</p>
+
+      <h3>📈 Difficulty</h3>
+      <p>Speed increases by ×0.05 every 50 points. A warning banner appears 10 points before each speed-up. Tunnels appear from 160 points onward, every 80 points.</p>
+
+      <h3>👨‍💻 Developer</h3>
+      <p>Built with vanilla HTML5 Canvas, no external libraries. Leaderboard powered by Upstash Redis via Vercel serverless functions.</p>
+    </div>
+  </div>
+
+  <!-- ══ PRIVACY POLICY SCREEN ══ -->
+  <div id="privacy-screen" class="page-screen">
+    <div class="page-header">
+      <button class="page-back" onclick="showPage('menu-screen')">←</button>
+      <span class="page-title">Privacy Policy</span>
+    </div>
+    <div class="page-body">
+      <p style="color:#6a5888;font-size:12px;">Last updated: April 2026</p>
+
+      <h3>1. Information We Collect</h3>
+      <p>Ostrich Run collects only the information you voluntarily provide: your chosen display name and your high score. No email address, phone number, or personal identification is collected.</p>
+
+      <h3>2. How We Use Your Information</h3>
+      <p>Your display name and score are stored on a global leaderboard to allow you to compete with other players. This data is publicly visible to all players of the game.</p>
+
+      <h3>3. Local Storage</h3>
+      <p>The game uses your browser's <code style="color:#9878e0">localStorage</code> to remember your player name and a local copy of the leaderboard. This data never leaves your device unless submitted to the leaderboard API.</p>
+
+      <h3>4. Advertising</h3>
+      <p>This game may display advertisements served by third-party advertising networks (such as Google AdSense or similar providers). These networks may use cookies and similar technologies to show you relevant ads based on your browsing activity across websites. We do not control the data collected by these advertising partners.</p>
+      <p>By playing Ostrich Run, you consent to the display of advertisements. You may opt out of personalized advertising through your device or browser settings, or by visiting <a href="https://www.youronlinechoices.com" target="_blank">youronlinechoices.com</a>.</p>
+
+      <h3>5. Cookies</h3>
+      <p>Ostrich Run itself does not set cookies. However, third-party ad networks embedded in the game may set their own cookies on your device for advertising and analytics purposes.</p>
+
+      <h3>6. Data Retention</h3>
+      <p>Leaderboard data (name + score) is retained indefinitely. You may request removal of your entry by contacting us. Local browser data can be cleared at any time through your browser settings.</p>
+
+      <h3>7. Children's Privacy</h3>
+      <p>This game is not directed at children under the age of 13. We do not knowingly collect personal data from children. If you believe a child has submitted information, please contact us so we can remove it.</p>
+
+      <h3>8. Third-Party Services</h3>
+      <p>We use <strong style="color:#d0c0f0">Upstash Redis</strong> (upstash.com) for leaderboard storage and <strong style="color:#d0c0f0">Vercel</strong> (vercel.com) for hosting. These services have their own privacy policies.</p>
+
+      <h3>9. Changes to This Policy</h3>
+      <p>We may update this Privacy Policy from time to time. Changes will be reflected by updating the date at the top of this page.</p>
+
+      <h3>10. Contact</h3>
+      <p>For privacy-related questions or data removal requests, please contact the developer through the game's distribution platform.</p>
     </div>
   </div>
 </div>
@@ -1561,16 +1726,46 @@ window.init = function(){
 // Patch into the game-over detection
 const _origStopBg = stopBg;
 
+// ═══════════════════════════════════════════
+// MENU / PAGE NAVIGATION
+// ═══════════════════════════════════════════
+let _menuWasRunning = false;
+
+function showMenu(){
+  _menuWasRunning = (st==='running');
+  if(st==='running') togglePause();
+  document.getElementById('menu-screen').classList.add('show');
+  document.getElementById('menu-mute-icon').textContent = muted ? '🔇' : '🔊';
+}
+
+function hideMenu(){
+  document.querySelectorAll('.page-screen').forEach(s=>s.classList.remove('show'));
+}
+
+function showPage(id){
+  document.querySelectorAll('.page-screen').forEach(s=>s.classList.remove('show'));
+  document.getElementById(id).classList.add('show');
+}
+
+function resumeFromMenu(){
+  hideMenu();
+  if(!playerName){
+    setTimeout(showNameModal, 100);
+  } else if(st==='idle'){
+    init(); startBg();
+  } else if(paused){
+    resumeGame();
+  }
+}
+
 // Boot
 for(let i=0;i<5;i++) clouds.push(mkCloud(Math.random()*600));
 for(let i=0;i<20;i++) ground.push(mkGrass(i*62));
 // Load saved player name
 const _saved = loadPlayer();
 if(_saved) playerName = _saved;
-// Dùng Vercel API cho leaderboard
-if(!playerName){
-  setTimeout(showNameModal, 200);
-}
+// Show menu on first load
+setTimeout(showMenu, 100);
 loop();
 </script>
 </body>
