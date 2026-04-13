@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9241640783850691"
-     crossorigin="anonymous"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Ostrich Run</title>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9241640783850691" crossorigin="anonymous"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;overflow:hidden;touch-action:none;background:#e8e4f0}
@@ -136,13 +135,56 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
 #ad-banner{
   width:100%;max-width:500px;
   margin:16px auto 0;
-  background:rgba(255,255,255,0.04);
-  border:1px dashed rgba(255,255,255,0.1);
-  border-radius:10px;
   min-height:60px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:11px;color:#3a2860;
+  display:block;
   text-align:center;
+}
+#ad-banner-lb{
+  width:100%;
+  margin:12px 0 0;
+  min-height:50px;
+  display:block;
+  text-align:center;
+}
+
+/* ── INTERSTITIAL AD (fullscreen, every 3 deaths) ── */
+#ad-interstitial{
+  display:none;position:fixed;inset:0;z-index:99999;
+  background:rgba(6,4,16,0.97);
+  flex-direction:column;align-items:center;justify-content:center;
+  padding:20px;
+}
+#ad-interstitial.show{display:flex;}
+#ad-inter-box{
+  width:min(420px,100%);background:#120e24;
+  border:1.5px solid #3a2860;border-radius:18px;
+  overflow:hidden;position:relative;
+}
+#ad-inter-top{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:10px 14px;background:#1a1230;
+  font-size:11px;color:#6a5888;
+}
+#ad-inter-label{font-weight:600;letter-spacing:.5px;}
+#ad-inter-skip{
+  border:none;background:#2a1e48;color:#c8b0f0;
+  font-size:12px;font-weight:700;cursor:pointer;
+  padding:5px 12px;border-radius:8px;
+  transition:background .15s;
+}
+#ad-inter-skip:active{background:#3a2860;}
+#ad-inter-skip:disabled{color:#4a3868;cursor:not-allowed;}
+#ad-inter-countdown{
+  font-size:13px;font-weight:700;color:#9070c0;
+  min-width:28px;text-align:center;
+}
+#ad-inter-content{
+  min-height:280px;display:flex;align-items:center;justify-content:center;
+  padding:0;
+}
+#ad-inter-footer{
+  padding:10px 14px;text-align:center;
+  font-size:10px;color:#3a2860;
 }
 </style>
 </head>
@@ -181,6 +223,15 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
       <div class="sub">Top 10 best players</div>
       <div id="lb-list"></div>
       <div id="lb-you-row"></div>
+      <!-- Ad in leaderboard — always shown -->
+      <div id="ad-banner-lb">
+        <ins class="adsbygoogle"
+             style="display:block;width:100%;min-height:50px;"
+             data-ad-client="ca-pub-9241640783850691"
+             data-ad-slot="YOUR_AD_SLOT_ID_2"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
       <button id="lb-close" onclick="closeLB()">Play Again</button>
     </div>
   </div>
@@ -195,6 +246,26 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
     </div>
   </div>
 
+  <!-- ══ INTERSTITIAL AD (fullscreen, every 3 deaths) ══ -->
+  <div id="ad-interstitial">
+    <div id="ad-inter-box">
+      <div id="ad-inter-top">
+        <span id="ad-inter-label">Advertisement</span>
+        <span id="ad-inter-countdown">5s</span>
+        <button id="ad-inter-skip" disabled onclick="closeInterstitial()">Skip ✕</button>
+      </div>
+      <div id="ad-inter-content">
+        <ins class="adsbygoogle"
+             style="display:block;width:100%;min-height:250px;"
+             data-ad-client="ca-pub-9241640783850691"
+             data-ad-slot="YOUR_AD_SLOT_ID_INTER"
+             data-ad-format="auto"
+             data-full-width-responsive="true"></ins>
+      </div>
+      <div id="ad-inter-footer">Tap ad to support the developer · closes automatically</div>
+    </div>
+  </div>
+
   <!-- ══ MENU SCREEN ══ -->
   <div id="menu-screen" class="page-screen">
     <div class="menu-hero">
@@ -202,10 +273,14 @@ canvas{display:block;width:100%;border-left:1.5px solid #d8d0e0;border-right:1.5
       <h1>Ostrich Run</h1>
       <p>Dodge eggs · Grab armor · Beat the board</p>
     </div>
-    <!-- Ad banner slot (replace with real ad unit) -->
+    <!-- Ad banner in menu -->
     <div id="ad-banner">
-      <!-- INSERT AD CODE HERE -->
-      Advertisement
+      <ins class="adsbygoogle"
+           style="display:block;width:100%;min-height:60px;"
+           data-ad-client="ca-pub-9241640783850691"
+           data-ad-slot="YOUR_AD_SLOT_ID"
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
     </div>
     <div class="menu-btns" style="margin-top:20px;">
       <button class="mbtn mbtn-primary" onclick="hideMenu();resumeFromMenu();">
@@ -1520,6 +1595,9 @@ function loop(){
 const PLAYER_KEY = 'dino_player_v1';
 let playerName = '';
 let playerGames = 0;
+let deathCount = 0;       // total deaths this session
+let _lbAdLoaded = false;  // track if lb ad slot has been pushed
+let _menuAdLoaded = false; // track if menu ad has been pushed
 
 // ── Leaderboard: API với fallback localStorage ──
 const API = '/api/leaderboard';
@@ -1658,10 +1736,97 @@ function hideNameModal(){
   document.getElementById('name-modal').classList.remove('show');
 }
 
-// ── Leaderboard display ──
+// ── Ad logic ──
+let _lbAdLoaded = false;
+let _menuAdLoaded = false;
+let _interAdLoaded = false;
+let _interTimer = null;
+
+function initBannerAds(){
+  // Push banner ads once on page load
+  try{
+    if(!_menuAdLoaded){
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      _menuAdLoaded = true;
+    }
+    if(!_lbAdLoaded){
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      _lbAdLoaded = true;
+    }
+  } catch(e){}
+}
+
+function maybeShowInterstitial(onClose){
+  // Show interstitial every 3 deaths (death 3, 6, 9, ...)
+  if(deathCount % 3 !== 0){
+    onClose();
+    return;
+  }
+  const overlay = document.getElementById('ad-interstitial');
+  overlay.classList.add('show');
+
+  // Push interstitial ad slot once
+  if(!_interAdLoaded){
+    try{
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      _interAdLoaded = true;
+    } catch(e){}
+  }
+
+  // Countdown 5s then enable skip
+  let secs = 5;
+  const cdEl = document.getElementById('ad-inter-countdown');
+  const skipBtn = document.getElementById('ad-inter-skip');
+  cdEl.textContent = secs + 's';
+  skipBtn.disabled = true;
+
+  _interTimer = setInterval(()=>{
+    secs--;
+    cdEl.textContent = secs > 0 ? secs + 's' : '';
+    if(secs <= 0){
+      clearInterval(_interTimer);
+      skipBtn.disabled = false;
+      skipBtn.textContent = 'Skip ✕';
+      // Auto-close after another 2s if user doesn't skip
+      _interTimer = setTimeout(()=>{ closeInterstitial(); onClose(); }, 2000);
+      return;
+    }
+  }, 1000);
+
+  // Store callback for when closed
+  overlay._onClose = onClose;
+}
+
+function closeInterstitial(){
+  clearInterval(_interTimer);
+  clearTimeout(_interTimer);
+  const overlay = document.getElementById('ad-interstitial');
+  overlay.classList.remove('show');
+  const cb = overlay._onClose;
+  overlay._onClose = null;
+  if(typeof cb === 'function') cb();
+}
+
+function showMenuAd(){
+  // Menu ad is always visible (pushed once at init)
+  const banner = document.getElementById('ad-banner');
+  if(banner) banner.style.display = 'block';
+}
+
 async function showLB(){
   if(!playerName){ init(); startBg(); return; }
-  // Hiện modal ngay với loading state
+  deathCount++;
+
+  // Every 3rd death: show interstitial first, then leaderboard after it closes
+  if(deathCount % 3 === 0){
+    maybeShowInterstitial(()=>_showLeaderboard());
+  } else {
+    _showLeaderboard();
+  }
+}
+
+async function _showLeaderboard(){
+  // Show modal with loading state
   document.getElementById('lb-list').innerHTML = '<div style="text-align:center;padding:24px;color:#8070a8;font-size:13px">⏳ Loading...</div>';
   document.getElementById('lb-you-row').innerHTML = '';
   document.getElementById('lb-modal').classList.add('show');
@@ -1738,6 +1903,7 @@ function showMenu(){
   if(st==='running') togglePause();
   document.getElementById('menu-screen').classList.add('show');
   document.getElementById('menu-mute-icon').textContent = muted ? '🔇' : '🔊';
+  showMenuAd();
 }
 
 function hideMenu(){
@@ -1766,6 +1932,8 @@ for(let i=0;i<20;i++) ground.push(mkGrass(i*62));
 // Load saved player name
 const _saved = loadPlayer();
 if(_saved) playerName = _saved;
+// Init banner ads immediately
+initBannerAds();
 // Show menu on first load
 setTimeout(showMenu, 100);
 loop();
