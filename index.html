@@ -250,6 +250,7 @@ function toggleMute(){
 // ═══════════════════════════════════════════
 let st='idle', sc=0, hi=0, fr=0, sm=1, spd=5;
 let paused=false, pauseTimer=0, pauseInterval=null;
+let tunnelTimer=0; // counts down frames while underground (600 = 10s)
 
 // Ostrich
 let bird={
@@ -281,12 +282,13 @@ let announce=null; // { text, timer, color }
 // ═══════════════════════════════════════════
 function init(){
   sc=0; fr=0; sm=1; spd=5;
-  bird={x:OX,y:GY,vy:0,duck:false,duckCount:0,duckCooldown:0,run:0,underground:false,armor:false,armorTimer:0,armorFlash:0,ironBird:false};
+  bird={x:OX,y:GY,vy:0,duck:false,duckCount:0,duckCooldown:0,run:0,underground:false,armor:false,armorTimer:0,armorFlash:0,ironBird:false,beak:false,beakTimer:0};
   obs=[]; coins=[]; parts=[]; tunnel=null; lastTunnelScore=0; announce=null;
   clouds=[]; for(let i=0;i<5;i++) clouds.push(mkCloud(Math.random()*CW));
   ground=[]; for(let i=0;i<20;i++) ground.push(mkGrass(i*65));
   // Reset pause
   paused=false; clearInterval(pauseInterval); pauseInterval=null; pauseTimer=0;
+  tunnelTimer=0;
   document.getElementById('pause-icon').style.display='';
   document.getElementById('resume-icon').style.display='none';
   document.getElementById('pause-countdown').style.display='none';
@@ -404,32 +406,28 @@ function duckPress(){
   if(st!=='running') return;
   resumeAC();
 
-  // Trong hầm: không cần cúi đặc biệt
   if(bird.underground){
     bird.duck=true;
     return;
   }
 
   if(bird.duck){
-    // Lần cúi thứ 2 trong 0.5s → xuống hầm
-    if(bird.duckCooldown > 0 && tunnel){
-      const nearTunnel = Math.abs(bird.x - tunnel.x) < 120 || (bird.x > tunnel.x && bird.x < tunnel.x+tunnel.len);
-      if(nearTunnel){
-        enterTunnel();
-        return;
-      }
+    // Second duck — enter tunnel if one is visible anywhere on screen
+    if(tunnel && !bird.underground){
+      enterTunnel();
+      return;
     }
     return;
   }
 
-  // Lần cúi đầu
+  // First duck
   bird.duck=true;
-  bird.duckCooldown=30; // 0.5s window để cúi lần 2
-  if(!bird.underground) snd.duck();
+  bird.duckCooldown=40;
+  snd.duck();
 }
 
 function duckRelease(){
-  if(bird.underground) return; // trong hầm luôn cúi
+  if(bird.underground) return;
   bird.duck=false;
 }
 
@@ -439,8 +437,9 @@ function enterTunnel(){
   bird.y = UG_GY;
   bird.vy=0;
   bird.duck=true;
+  tunnelTimer=600; // 10s * 60fps
   snd.enter();
-  setAnnounce('⛏️ Entering tunnel!', '#8060c0', 80);
+  setAnnounce('⛏️ Entering tunnel! (10s)', '#8060c0', 100);
 }
 
 function exitTunnel(){
@@ -448,8 +447,18 @@ function exitTunnel(){
   bird.y = GY;
   bird.vy=0;
   bird.duck=false;
-  obs=[]; // xóa chướng ngại vật khi ra hầm
+  tunnelTimer=0;
+  obs=[];
+  // Give iron beak after tunnel
+  if(bird.ironBird) giveBeak();
   setAnnounce('🌟 Out of tunnel!', '#40a060', 90);
+}
+
+function giveBeak(){
+  bird.beak=true;
+  bird.beakTimer=600; // 10s
+  setAnnounce('🦴 Iron Beak! Duck to pierce eggs! (10s)', '#e09020', 160);
+  updateArmorBar();
 }
 
 // ═══════════════════════════════════════════
@@ -474,6 +483,10 @@ function updateArmorBar(){
     fill.style.background=bird.armorTimer<180
       ? 'linear-gradient(90deg,#e04020,#c02010)'
       : 'linear-gradient(90deg,#f8a020,#e06010)';
+  } else if(bird.beak){
+    bar.style.display='flex';
+    fill.style.width=(bird.beakTimer/600*100)+'%';
+    fill.style.background='linear-gradient(90deg,#40c0e0,#2080b0)';
   } else {
     bar.style.display='none';
   }
@@ -637,35 +650,30 @@ function drawTunnelSurface(t){
   const tx=t.x, tlen=t.len;
   cx.save();
 
-  // Phủ tối phần nhập đường hầm
-  const entryW=80;
-  cx.fillStyle='#4a3820';
-  cx.fillRect(tx-4,GY-entryW*0.3,16,entryW*0.3+4);
-  // Cửa hầm hình vòm
-  cx.fillStyle='#2a1808';
-  cx.beginPath(); cx.arc(tx+4,GY+2,14,Math.PI,0); cx.lineTo(tx+18,GY+2); cx.lineTo(tx-10,GY+2); cx.closePath(); cx.fill();
+  // Tunnel entrance arch
+  cx.fillStyle='#3a2810';
+  cx.fillRect(tx-6, GY-28, 20, 30);
+  cx.fillStyle='#1e0e04';
+  cx.beginPath(); cx.arc(tx+4, GY+2, 16, Math.PI, 0); cx.lineTo(tx+20,GY+2); cx.lineTo(tx-12,GY+2); cx.closePath(); cx.fill();
+  // Arch highlight
+  cx.strokeStyle='#6a4a28'; cx.lineWidth=2; cx.beginPath(); cx.arc(tx+4,GY+2,16,Math.PI,0); cx.stroke();
 
-  // Thanh ngang chỉ đường hầm
-  cx.strokeStyle='#6a4a28'; cx.lineWidth=3;
-  cx.setLineDash([8,6]);
-  cx.beginPath(); cx.moveTo(tx,GY+2); cx.lineTo(tx+tlen,GY+2); cx.stroke();
-  cx.setLineDash([]);
+  // Underground road — solid line (no dashes)
+  cx.strokeStyle='rgba(80,55,25,0.5)'; cx.lineWidth=4;
+  cx.beginPath(); cx.moveTo(tx, GY+4); cx.lineTo(Math.min(tx+tlen, CW+10), GY+4); cx.stroke();
 
-  // Chỉ báo khoảng cách
+  // Approach warning — only when tunnel is close
   const dist=tx-OX;
-  if(dist>0 && dist<240){
-    cx.globalAlpha=Math.min(1,(240-dist)/120);
-    // Nền thông báo
-    cx.fillStyle='rgba(40,20,8,0.75)';
-    rr(CW/2-110,GY-80,220,44,10);
-    cx.fillStyle='#f8d080';
-    cx.font='bold 14px -apple-system,sans-serif';
-    cx.textAlign='center';
-    cx.fillText('⬇⬇ DUCK TWICE to enter tunnel!',CW/2,GY-60);
-    cx.font='11px -apple-system,sans-serif'; cx.fillStyle='rgba(255,220,100,0.8)';
-    cx.fillText('🛡️ Iron armor inside',CW/2,GY-44);
-    cx.globalAlpha=1;
-    cx.textAlign='left';
+  if(dist>0 && dist<280){
+    const alpha=Math.min(1,(280-dist)/140);
+    cx.globalAlpha=alpha;
+    cx.fillStyle='rgba(30,15,5,0.82)';
+    rr(CW/2-120,GY-88,240,52,10);
+    cx.fillStyle='#f8d080'; cx.font='bold 14px -apple-system,sans-serif'; cx.textAlign='center';
+    cx.fillText('⬇⬇  Duck twice to enter tunnel!',CW/2,GY-66);
+    cx.font='11px -apple-system,sans-serif'; cx.fillStyle='rgba(255,200,80,0.85)';
+    cx.fillText('🛡️  Grab armor beak inside!',CW/2,GY-48);
+    cx.globalAlpha=1; cx.textAlign='left';
   }
   cx.restore();
 }
@@ -1157,6 +1165,16 @@ function loop(){
       }
     }
 
+    // Beak countdown
+    if(bird.beak){
+      bird.beakTimer--;
+      if(bird.beakTimer<=0){
+        bird.beak=false;
+        setAnnounce('💥 Iron Beak worn out!','#c04010',80);
+        updateArmorBar();
+      }
+    }
+
     // Physics
     const curGY = bird.underground ? UG_GY : GY;
     if(!bird.underground){
@@ -1179,11 +1197,19 @@ function loop(){
     if(tunnel){
       tunnel.x -= spd;
       if(tunnel.armorX>0) tunnel.armorX -= spd;
-      if(bird.underground && bird.x > tunnel.x + tunnel.len - 20){
-        exitTunnel();
-        tunnel=null;
+      // Underground: count down 10s timer then exit
+      if(bird.underground){
+        tunnelTimer--;
+        if(tunnelTimer<=0){
+          exitTunnel();
+          tunnel=null;
+        }
       }
+      // Tunnel scrolled past without entering
       if(tunnel && tunnel.x+tunnel.len < -10) tunnel=null;
+    } else if(bird.underground){
+      // Safety: exit if tunnel gone
+      exitTunnel();
     }
 
     // ── Obstacles ──
@@ -1208,9 +1234,22 @@ function loop(){
     let hitObstacle=null;
     for(const o of obs){
       if(hitObs(o)){
+        // Iron Beak: ducking into egg destroys it
+        if(bird.beak && bird.duck && o.tp==='cac'){
+          // Smash the egg — mini explosion + remove
+          const ex=o.x+o.w/2, ey=GY-o.h*0.55;
+          for(let i=0;i<20;i++){
+            const a=Math.random()*Math.PI*2, sp=3+Math.random()*6;
+            parts.push({x:ex,y:ey,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-3,life:0.9,r:3+Math.random()*5,c:['#f8e020','#ffffff','#1a1a22'][Math.floor(Math.random()*3)]});
+          }
+          o.x=-999; // remove obstacle
+          snd.coin();
+          continue;
+        }
         if(!bird.armor){ dead=true; hitObstacle=o; break; }
       }
     }
+    obs=obs.filter(o=>o.x>-80);
 
     if(dead){
       st='dead';
