@@ -338,13 +338,20 @@ function spawnCoin(){
 }
 
 function spawnTunnel(){
-  // Xuất hiện mỗi 200đ
-  const nextTrigger = lastTunnelScore + 200;
-  if(sc >= nextTrigger && !tunnel){
+  // First tunnel at 160pts, then every 80pts
+  const firstTrigger = 160;
+  const interval = 80;
+  if(lastTunnelScore === 0 && sc >= firstTrigger && !tunnel){
     tunnel={x:CW+80, len:UG_LEN, entryDone:false, armorSpawned:false, armorX:0};
-    lastTunnelScore = nextTrigger;
-    // Tạo đồng giáp sắt trong hầm
-    tunnel.armorX = CW + 80 + UG_LEN*0.5; // giữa đường hầm
+    lastTunnelScore = firstTrigger;
+    tunnel.armorX = CW + 80 + UG_LEN*0.5;
+  } else if(lastTunnelScore > 0){
+    const nextTrigger = lastTunnelScore + interval;
+    if(sc >= nextTrigger && !tunnel){
+      tunnel={x:CW+80, len:UG_LEN, entryDone:false, armorSpawned:false, armorX:0};
+      lastTunnelScore = nextTrigger;
+      tunnel.armorX = CW + 80 + UG_LEN*0.5;
+    }
   }
 }
 
@@ -832,6 +839,24 @@ function drawOstrich(){
     cx.fillStyle='#fff'; cx.beginPath(); cx.arc(bx+72,by-30,3,0,Math.PI*2); cx.fill();
     cx.fillStyle='#111'; cx.beginPath(); cx.arc(bx+73,by-30,1.8,0,Math.PI*2); cx.fill();
     cx.fillStyle='#5af'; cx.beginPath(); cx.arc(bx+73.5,by-30.5,0.8,0,Math.PI*2); cx.fill();
+    // 🧢 Black backwards cap (duck pose)
+    cx.save();
+    cx.translate(bx+70, by-36);
+    cx.rotate(0.2);
+    // Bill pointing backward (left)
+    cx.fillStyle='#111118';
+    cx.beginPath(); cx.ellipse(-11,3.5,8,3,-0.1,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#0a0a12';
+    cx.beginPath(); cx.ellipse(-11,4.5,8,2,-0.1,0,Math.PI*2); cx.fill();
+    // Dome
+    cx.fillStyle='#1a1a28';
+    cx.beginPath();
+    cx.moveTo(-10,2); cx.bezierCurveTo(-11,-12,10,-15,11,2); cx.bezierCurveTo(6,5,-5,5,-10,2); cx.closePath(); cx.fill();
+    cx.fillStyle='#0a0a10';
+    cx.beginPath(); cx.ellipse(1,2,10,3,0,0,Math.PI*2); cx.fill();
+    cx.fillStyle='rgba(255,255,255,0.09)';
+    cx.beginPath(); cx.ellipse(3,-6,4,4,-0.3,0,Math.PI*2); cx.fill();
+    cx.restore();
     // Legs
     drawLeg(bx+14,by,Math.sin(run*0.4)*0.5+0.3,true);
     drawLeg(bx+26,by,-Math.sin(run*0.4)*0.5+0.1,true);
@@ -872,8 +897,101 @@ function drawOstrich(){
     cx.fillStyle='#1a1a2e'; cx.beginPath(); cx.arc(hx+4,hy-3,3,0,Math.PI*2); cx.fill();
     cx.fillStyle='#5af'; cx.beginPath(); cx.arc(hx+4.5,hy-3.5,1.2,0,Math.PI*2); cx.fill();
     cx.fillStyle='#fff'; cx.beginPath(); cx.arc(hx+5.5,hy-5,1,0,Math.PI*2); cx.fill();
-    // Arm
-    cx.fillStyle=B2; cx.fillRect(bx+24,by-32,10,6); cx.fillStyle=B1; cx.fillRect(bx+32,by-30,8,5);
+    // 🧢 Black backwards cap (phớt đen đội ngược)
+    cx.save();
+    cx.translate(hx, hy-10);
+    cx.rotate(-0.1); // slight tilt
+    // Bill of cap pointing BACKWARD (left, negative x)
+    cx.fillStyle='#111118';
+    cx.beginPath(); cx.ellipse(-14,4,10,3.5,0.15,0,Math.PI*2); cx.fill(); // bill
+    cx.fillStyle='#0a0a12';
+    cx.beginPath(); cx.ellipse(-14,5.5,10,2.5,0.15,0,Math.PI*2); cx.fill(); // bill underside
+    // Cap dome
+    cx.fillStyle='#1a1a28';
+    cx.beginPath();
+    cx.moveTo(-12,2);
+    cx.bezierCurveTo(-14,-14, 12,-18, 14,2);
+    cx.bezierCurveTo(8,6, -6,6, -12,2);
+    cx.closePath(); cx.fill();
+    // Cap band at bottom
+    cx.fillStyle='#0a0a10';
+    cx.beginPath(); cx.ellipse(1,2,13,4,0,0,Math.PI*2); cx.fill();
+    // Highlight on dome
+    cx.fillStyle='rgba(255,255,255,0.09)';
+    cx.beginPath(); cx.ellipse(4,-8,6,5,-0.3,0,Math.PI*2); cx.fill();
+    // Vent holes (small dots)
+    cx.fillStyle='rgba(255,255,255,0.15)';
+    for(let d=0;d<3;d++){ cx.beginPath(); cx.arc(2+d*4,-4,1,0,Math.PI*2); cx.fill(); }
+    cx.restore();
+
+    // Wings — eagle-style horizontal spread when airborne, tucked when on ground
+    const inAir = !onG;
+    const wf = inAir ? Math.sin(fr * 0.18) * 0.08 : 0;
+
+    if(inAir){
+      // ── LEFT WING — spreads horizontally to the left ──
+      cx.save();
+      cx.translate(bx+12, by-32);
+      cx.rotate(wf);
+      // Main wing shape — goes LEFT and slightly down (horizontal eagle spread)
+      cx.fillStyle=B1;
+      cx.beginPath();
+      cx.moveTo(0, 0);
+      cx.bezierCurveTo(-14, -4,  -34, -6, -56, -2);   // top edge, nearly flat
+      cx.bezierCurveTo(-52,  4,  -44, 10, -36, 14);   // tip curves down
+      cx.bezierCurveTo(-22, 16,  -10, 12,   0, 6);    // bottom back to body
+      cx.closePath(); cx.fill();
+      // Wing sheen
+      cx.fillStyle='rgba(255,255,255,0.09)';
+      cx.beginPath();
+      cx.moveTo(0,0); cx.bezierCurveTo(-12,-3,-32,-5,-50,-1); cx.bezierCurveTo(-44,3,-28,2,0,2); cx.closePath(); cx.fill();
+      // Secondary feathers — along the wing surface
+      cx.strokeStyle=B2; cx.lineWidth=1.5; cx.lineCap='round';
+      const lSec=[[-10,4],[-20,6],[-30,7],[-40,7],[-50,5]];
+      lSec.forEach(([fx2,fy2])=>{
+        cx.beginPath(); cx.moveTo(fx2,fy2-4); cx.lineTo(fx2-2,fy2+6); cx.stroke();
+      });
+      // Primary feathers — long finger tips at outer edge
+      const lPrim=[[-56,-2],[-51,2],[-46,6],[-40,10],[-34,13],[-28,14],[-22,14]];
+      lPrim.forEach(([fx2,fy2],i)=>{
+        cx.strokeStyle=i%2===0?B1:B2; cx.lineWidth=3; cx.lineCap='round';
+        cx.beginPath(); cx.moveTo(fx2,fy2); cx.lineTo(fx2-4, fy2+14+i*1.5); cx.stroke();
+      });
+      cx.restore();
+
+      // ── RIGHT WING — spreads horizontally to the right ──
+      cx.save();
+      cx.translate(bx+32, by-32);
+      cx.rotate(-wf);
+      cx.fillStyle=B1;
+      cx.beginPath();
+      cx.moveTo(0, 0);
+      cx.bezierCurveTo(12, -4,  32, -6,  54, -2);
+      cx.bezierCurveTo(50,  4,  42, 10,  34, 14);
+      cx.bezierCurveTo(20, 16,   8, 12,   0,  6);
+      cx.closePath(); cx.fill();
+      cx.fillStyle='rgba(255,255,255,0.09)';
+      cx.beginPath();
+      cx.moveTo(0,0); cx.bezierCurveTo(10,-3,30,-5,48,-1); cx.bezierCurveTo(42,3,26,2,0,2); cx.closePath(); cx.fill();
+      // Secondary feathers
+      cx.strokeStyle=B2; cx.lineWidth=1.5; cx.lineCap='round';
+      const rSec=[[10,4],[20,6],[30,7],[40,7],[50,5]];
+      rSec.forEach(([fx2,fy2])=>{
+        cx.beginPath(); cx.moveTo(fx2,fy2-4); cx.lineTo(fx2+2,fy2+6); cx.stroke();
+      });
+      // Primary feathers
+      const rPrim=[[54,-2],[49,2],[44,6],[38,10],[32,13],[26,14],[20,14]];
+      rPrim.forEach(([fx2,fy2],i)=>{
+        cx.strokeStyle=i%2===0?B1:B2; cx.lineWidth=3; cx.lineCap='round';
+        cx.beginPath(); cx.moveTo(fx2,fy2); cx.lineTo(fx2+4, fy2+14+i*1.5); cx.stroke();
+      });
+      cx.restore();
+
+    } else {
+      // Tucked wings on ground
+      cx.fillStyle=B2; cx.fillRect(bx+24,by-32,10,6);
+      cx.fillStyle=B1; cx.fillRect(bx+32,by-30,8,5);
+    }
     // Iron armor
     if(iron){
       cx.fillStyle='rgba(80,100,140,0.8)'; cx.beginPath(); cx.ellipse(bx+16,by-46,12,8,-0.3,0,Math.PI*2); cx.fill();
@@ -971,7 +1089,7 @@ function drawOverlay(){
 function updHUD(){
   document.getElementById('score-el').textContent=String(Math.floor(sc)).padStart(5,'0');
   document.getElementById('hi-el').textContent='Best: '+String(Math.floor(hi)).padStart(5,'0');
-  document.getElementById('speed-el').textContent='×'+sm.toFixed(1);
+  document.getElementById('speed-el').textContent='×'+sm.toFixed(2);
   if(bird.armor) updateArmorBar();
 }
 
@@ -1087,16 +1205,56 @@ function loop(){
 
     // ── Hit detection ──
     let dead=false;
+    let hitObstacle=null;
     for(const o of obs){
       if(hitObs(o)){
-        if(!bird.armor){ dead=true; break; }
+        if(!bird.armor){ dead=true; hitObstacle=o; break; }
       }
     }
 
     if(dead){
       st='dead';
       if(Math.floor(sc)>hi) hi=Math.floor(sc);
-      for(let i=0;i<28;i++){const a=Math.random()*Math.PI*2,sp=1+Math.random()*5;const hues=['#e8a87c','#c47b4a','#f0c090'];parts.push({x:bird.x+22,y:bird.y-32,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2.5,life:1,r:2+Math.random()*4,c:hues[Math.floor(Math.random()*3)]});}
+      const hx=bird.x+22, hy=bird.y-20;
+      if(hitObstacle && hitObstacle.tp==='cac'){
+        // 💣 BOMB explosion — massive blast at egg position
+        const ex=hitObstacle.x+hitObstacle.w/2, ey=GY-hitObstacle.h*0.55;
+        // Wave 1: shockwave ring — fast particles in all directions
+        for(let i=0;i<70;i++){
+          const a=(i/70)*Math.PI*2, sp=6+Math.random()*12;
+          const boom=['#f8e020','#fff060','#ff8800','#ff4400','#ffffff','#ffcc00','#ff2200'];
+          parts.push({x:ex,y:ey,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-3,life:1.2+Math.random()*0.4,r:3+Math.random()*8,c:boom[Math.floor(Math.random()*boom.length)]});
+        }
+        // Wave 2: big yolk blobs
+        for(let i=0;i<16;i++){
+          const a=Math.random()*Math.PI*2, sp=2+Math.random()*5;
+          parts.push({x:ex+Math.random()*8-4,y:ey,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-4,life:1.6,r:10+Math.random()*14,c:i%4===0?'#ffffff':i%3===0?'#fff060':'#f8d010'});
+        }
+        // Wave 3: black shell shards shooting upward
+        for(let i=0;i<24;i++){
+          const a=-Math.PI+Math.random()*Math.PI, sp=7+Math.random()*10;
+          parts.push({x:ex,y:ey,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-8,life:1,r:2+Math.random()*4,c:i%2===0?'#0a0a10':'#c8c8d0'});
+        }
+        // Wave 4: smoke puffs rising
+        for(let i=0;i<12;i++){
+          parts.push({x:ex+Math.random()*40-20,y:ey-10,vx:(Math.random()-0.5)*2,vy:-1.5-Math.random()*3,life:1.5,r:14+Math.random()*18,c:'rgba(60,55,40,0.32)'});
+        }
+      } else if(hitObstacle && (hitObstacle.tp==='ceil'||hitObstacle.tp==='bird')){
+        // 🪨 Rock crack — grey/purple stone shards + dust
+        for(let i=0;i<35;i++){
+          const a=Math.random()*Math.PI*2, sp=1+Math.random()*5;
+          const rockHues=['#8a7a9a','#6a5a80','#b0a0c0','#c8b8d8','#504060','#d0c8e0'];
+          parts.push({x:hx,y:hy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2.5,life:1,r:2+Math.random()*5,c:rockHues[Math.floor(Math.random()*rockHues.length)]});
+        }
+        // Dust puffs
+        for(let i=0;i<10;i++){
+          const a=Math.random()*Math.PI*2;
+          parts.push({x:hx+Math.random()*16-8,y:hy,vx:Math.cos(a)*1.5,vy:Math.sin(a)-1,life:0.8,r:6+Math.random()*8,c:'rgba(180,160,200,0.5)'});
+        }
+      } else {
+        // Default ostrich feather burst
+        for(let i=0;i<28;i++){const a=Math.random()*Math.PI*2,sp=1+Math.random()*5;const hues=['#e8a87c','#c47b4a','#f0c090'];parts.push({x:hx,y:hy,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp-2.5,life:1,r:2+Math.random()*4,c:hues[Math.floor(Math.random()*3)]});}
+      }
       snd.hit(); stopBg();
       setTimeout(()=>showLB(), 900);
     }
@@ -1105,10 +1263,12 @@ function loop(){
     const pm=Math.floor((sc-sm/60)/100), cm=Math.floor(sc/100);
     if(cm>pm&&cm>0){ snd.mile(); setAnnounce('🏅 '+cm*100+' pts! Speed ×'+sm.toFixed(2),'#6080e0',80); }
 
-    // Speed-up warning: fires when score crosses the X40, X90, X140... mark (10 pts before each +0.05 step)
-    if(Math.floor((sc-sm/60)%50) < 40 && Math.floor(sc%50) >= 40 && !dead){
+    // Speed-up warning: fires 10pts before each step (at 40, 90, 140, 190...)
+    const prevBucket = Math.floor((sc - sm/60) % 50);
+    const currBucket = Math.floor(sc % 50);
+    if(prevBucket < 40 && currBucket >= 40 && !dead){
       const nextSpeed = Math.round((sm + 0.05)*100)/100;
-      setWarning('⚠️  Speed increasing soon!  ×'+nextSpeed.toFixed(2)+'  — Stay sharp!','#f0a020',140);
+      setWarning('⚠️  Speed up incoming!  ×'+nextSpeed.toFixed(2)+'  — Stay sharp!','#f0a020',150);
     }
 
     parts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.22;p.life-=0.034;});
