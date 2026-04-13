@@ -801,171 +801,251 @@ function drawOstrich(){
 
   cx.save();
 
-  // Armor flash overlay
-  if(iron && bird.armor && flash%6<3){ cx.globalAlpha=0.25; cx.fillStyle='#f8a020'; cx.fillRect(bx-10,by-70,70,80); cx.globalAlpha=1; }
+  // Armor flash
+  if(iron && bird.armor && flash%6<3){ cx.globalAlpha=0.25; cx.fillStyle='#f8a020'; cx.fillRect(bx-10,by-70,80,90); cx.globalAlpha=1; }
 
   // Shadow
   const shadowGY = bird.underground ? UG_GY : GY;
-  cx.fillStyle='rgba(0,0,0,0.1)'; cx.beginPath(); cx.ellipse(bx+20,shadowGY+4,duck?28:18,5,0,0,Math.PI*2); cx.fill();
+  cx.fillStyle='rgba(0,0,0,0.12)';
+  cx.beginPath(); cx.ellipse(bx+22, shadowGY+4, duck?30:20, 5, 0, 0, Math.PI*2); cx.fill();
 
-  // Color scheme
-  const B1=iron?'#607090':'#2e2e50', B2=iron?'#485068':'#1e1e38', B3=iron?'#788aaa':'#2e2e50';
-  const N1=iron?'#909060':'#c8a060', N2=iron?'#b0b070':'#e8c080';
-  const H1=iron?'#888858':'#c8a060', H2=iron?'#a8a870':'#e8c880';
+  const ns = onG ? Math.sin(run*0.25)*3 : 0; // neck sway
 
   if(duck){
-    px(bx-5,by-28,16,12,B1); px(bx-9,by-22,8,7,B2);
-    const dg=cx.createRadialGradient(bx+22,by-22,3,bx+22,by-22,28);
-    dg.addColorStop(0,B1); dg.addColorStop(1,B2);
-    cx.fillStyle=dg; cx.beginPath(); cx.ellipse(bx+22,by-22,30,16,0,0,Math.PI*2); cx.fill();
-    cx.fillStyle='rgba(255,255,255,0.08)'; cx.beginPath(); cx.ellipse(bx+20,by-28,24,8,-0.1,0,Math.PI*2); cx.fill();
-    // Small ducked wings
-    cx.fillStyle=iron?'rgba(100,130,170,0.7)':'rgba(60,60,100,0.55)';
-    cx.beginPath(); cx.ellipse(bx+10,by-30,9,5,0.5,0,Math.PI*2); cx.fill();
-    cx.beginPath(); cx.ellipse(bx+32,by-28,8,4,-0.4,0,Math.PI*2); cx.fill();
-    // Neck forward
-    cx.strokeStyle=N1; cx.lineWidth=10; cx.lineCap='round';
-    cx.beginPath(); cx.moveTo(bx+44,by-22); cx.quadraticCurveTo(bx+52,by-28,bx+64,by-26); cx.stroke();
-    cx.strokeStyle=N2; cx.lineWidth=5;
-    cx.beginPath(); cx.moveTo(bx+44,by-22); cx.quadraticCurveTo(bx+52,by-28,bx+64,by-26); cx.stroke();
+    // ── DUCK POSE ──
+    // Body horizontal
+    cx.fillStyle=iron?'#506070':'#1a1a28';
+    cx.beginPath(); cx.ellipse(bx+26,by-20,32,14,0,0,Math.PI*2); cx.fill();
+    // White wing edge
+    cx.fillStyle=iron?'#8090a8':'#e8e8e8';
+    cx.beginPath(); cx.ellipse(bx+26,by-12,28,6,0.1,0,Math.PI*2); cx.fill();
+    // Neck forward (skin)
+    cx.strokeStyle='#d4956a'; cx.lineWidth=11; cx.lineCap='round';
+    cx.beginPath(); cx.moveTo(bx+50,by-22); cx.quadraticCurveTo(bx+60,by-26,bx+72,by-24); cx.stroke();
+    cx.strokeStyle='#e8b08a'; cx.lineWidth=6;
+    cx.beginPath(); cx.moveTo(bx+50,by-22); cx.quadraticCurveTo(bx+60,by-26,bx+72,by-24); cx.stroke();
     // Head
-    cx.fillStyle=H1; cx.beginPath(); cx.ellipse(bx+70,by-28,9,8,0.2,0,Math.PI*2); cx.fill();
-    cx.fillStyle=H2; cx.beginPath(); cx.ellipse(bx+67,by-31,5,4,-0.3,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#d4956a';
+    cx.beginPath(); cx.ellipse(bx+78,by-27,10,9,0.15,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#e8b08a';
+    cx.beginPath(); cx.ellipse(bx+75,by-30,6,5,-0.2,0,Math.PI*2); cx.fill();
     // Beak
-    cx.fillStyle='#e8c050'; cx.beginPath(); cx.moveTo(bx+76,by-27); cx.lineTo(bx+86,by-25); cx.lineTo(bx+76,by-23); cx.closePath(); cx.fill();
-    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(bx+72,by-30,3,0,Math.PI*2); cx.fill();
-    cx.fillStyle='#111'; cx.beginPath(); cx.arc(bx+73,by-30,1.8,0,Math.PI*2); cx.fill();
-    cx.fillStyle='#5af'; cx.beginPath(); cx.arc(bx+73.5,by-30.5,0.8,0,Math.PI*2); cx.fill();
-    // 2 legs only
-    drawLeg(bx+12, by,  Math.sin(run*0.4)*0.5+0.3, true);
-    drawLeg(bx+30, by, -Math.sin(run*0.4)*0.5+0.1, true);
-    // Iron armor plates
-    if(iron){ cx.fillStyle='rgba(100,120,160,0.7)'; cx.fillRect(bx+2,by-36,16,10); cx.fillRect(bx+18,by-34,16,10); }
+    cx.fillStyle='#e07820';
+    cx.beginPath(); cx.moveTo(bx+84,by-26); cx.lineTo(bx+96,by-23); cx.lineTo(bx+84,by-21); cx.closePath(); cx.fill();
+    cx.fillStyle='#c05a10'; cx.fillRect(bx+84,by-25,12,1);
+    // Eye
+    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(bx+77,by-30,4,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#1a6abf'; cx.beginPath(); cx.arc(bx+77,by-30,2.5,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#000'; cx.beginPath(); cx.arc(bx+77.5,by-30,1.2,0,Math.PI*2); cx.fill();
+    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(bx+78.2,by-31,0.8,0,Math.PI*2); cx.fill();
+    // Lashes
+    cx.strokeStyle='#1a1a28'; cx.lineWidth=1;
+    for(let l=0;l<3;l++){ cx.beginPath(); cx.moveTo(bx+74+l*1.5,by-34); cx.lineTo(bx+73+l*1.5,by-37); cx.stroke(); }
+    // Legs
+    drawOstrichLeg(bx+18, by, Math.sin(run*0.4)*0.5+0.3, true);
+    drawOstrichLeg(bx+32, by,-Math.sin(run*0.4)*0.5+0.1, true);
+
   } else {
-    // Tail feathers
-    cx.fillStyle=B1; cx.beginPath(); cx.ellipse(bx+2,by-30,16,10,0.5,0,Math.PI*2); cx.fill();
-    for(let i=0;i<6;i++){
-      cx.strokeStyle=`rgba(${iron?'80,90,120':'50,50,80'},${0.5+i*0.08})`; cx.lineWidth=1.5;
-      cx.beginPath(); cx.moveTo(bx+4,by-30); cx.quadraticCurveTo(bx-8-i*3,by-34+i*3,bx-10-i*3,by-36-i*3); cx.stroke();
-    }
-    // Body
-    const bg2=cx.createRadialGradient(bx+22,by-32,3,bx+22,by-32,28);
-    bg2.addColorStop(0,B3); bg2.addColorStop(.6,B1); bg2.addColorStop(1,B2);
-    cx.fillStyle=bg2; cx.beginPath(); cx.ellipse(bx+22,by-32,26,22,0,0,Math.PI*2); cx.fill();
-    cx.fillStyle='rgba(255,255,255,0.08)'; cx.beginPath(); cx.ellipse(bx+20,by-38,20,10,-0.2,0,Math.PI*2); cx.fill();
-    // Small wings on body sides — xòe rộng khi nhảy
+    // ── STANDING POSE ──
     const inAir = !onG;
-    const wingFlap = onG ? Math.sin(run*0.28)*0.25 : 0; // subtle flap on ground
-    // When airborne: wings spread outward
-    const wingSpread = inAir ? 0.9 : 0.2; // how far wings angle out from body
 
-    // Left wing — attached left side of body (bx+8, by-32)
+    // --- Draw legs FIRST (behind body) ---
+    const la  = onG ?  Math.sin(run*0.28)*0.55 : -0.2;
+    const la2 = onG ? -Math.sin(run*0.28)*0.55 :  0.2;
+    drawOstrichLeg(bx+16, by, la,  false);
+    drawOstrichLeg(bx+30, by, la2, false);
+
+    // --- Tail feathers ---
+    cx.fillStyle=iron?'#607090':'#1a1a28';
+    cx.beginPath(); cx.ellipse(bx+4,by-28,14,9,0.6,0,Math.PI*2); cx.fill();
+    // White tail tips
+    const tailAngles=[-0.9,-0.5,-0.1,0.3,0.7];
+    tailAngles.forEach(a=>{
+      cx.strokeStyle=iron?'#b0c0d0':'#e8e8e8'; cx.lineWidth=3; cx.lineCap='round';
+      cx.beginPath();
+      cx.moveTo(bx+2+Math.cos(a+Math.PI)*8, by-28+Math.sin(a+Math.PI)*7);
+      cx.lineTo(bx+2+Math.cos(a+Math.PI)*18, by-28+Math.sin(a+Math.PI)*14);
+      cx.stroke();
+    });
+
+    // --- Body (dark, oval) ---
+    cx.fillStyle=iron?'#506070':'#1c1c2a';
+    cx.beginPath(); cx.ellipse(bx+22,by-30,24,20,0,0,Math.PI*2); cx.fill();
+    // Body sheen
+    cx.fillStyle='rgba(255,255,255,0.06)';
+    cx.beginPath(); cx.ellipse(bx+18,by-38,16,8,-0.2,0,Math.PI*2); cx.fill();
+
+    // --- Fluffy collar (white) at neck base ---
+    cx.fillStyle=iron?'#b0c0d0':'#f0f0f0';
+    for(let f=0;f<8;f++){
+      const fa=f/8*Math.PI*2;
+      cx.beginPath(); cx.ellipse(bx+22+Math.cos(fa)*10, by-46+Math.sin(fa)*5, 6, 4, fa, 0, Math.PI*2); cx.fill();
+    }
+
+    // --- Wings ---
+    const wingFlap = inAir ? Math.sin(fr*0.18)*0.35 : Math.sin(run*0.28)*0.12;
+    const wingOpen = inAir ? 1.0 : 0.0;
+
+    // Left wing (behind body, so draw first)
     cx.save();
-    cx.translate(bx+6, by-34);
-    cx.rotate(inAir ? (-0.9 - Math.sin(fr*0.15)*0.2) : (-0.3 - wingFlap));
-    cx.fillStyle=iron?'rgba(100,130,170,0.9)':'rgba(55,55,95,0.88)';
-    const lwx = inAir ? 18 : 13, lwy = inAir ? 7 : 5;
-    cx.beginPath(); cx.ellipse(0,0,lwx,lwy,0,0,Math.PI*2); cx.fill();
-    cx.fillStyle='rgba(255,255,255,0.09)'; cx.beginPath(); cx.ellipse(-3,-2,lwx*0.65,lwy*0.5,0,0,Math.PI*2); cx.fill();
-    cx.strokeStyle=iron?'rgba(120,150,190,0.6)':'rgba(70,70,120,0.7)'; cx.lineWidth=1.3;
-    const tips = inAir ? 4 : 3;
-    for(let i=0;i<tips;i++){ cx.beginPath(); cx.moveTo(-lwx+i*(lwx*2/tips)+4, lwy-1); cx.lineTo(-lwx+i*(lwx*2/tips)+2, lwy+7); cx.stroke(); }
+    cx.translate(bx+6, by-32);
+    cx.rotate(-0.4 - wingFlap - wingOpen*0.6);
+    cx.fillStyle=iron?'#607080':'#1c1c2a';
+    cx.beginPath(); cx.ellipse(0,0, inAir?20:15, inAir?9:6, 0,0,Math.PI*2); cx.fill();
+    // White edge feathers
+    const wf = inAir?5:4;
+    for(let i=0;i<wf;i++){
+      cx.strokeStyle=iron?'#c0d0e0':'#e8e8e8'; cx.lineWidth=2.5; cx.lineCap='round';
+      const ex=(-12+i*(24/wf));
+      cx.beginPath(); cx.moveTo(ex, 4); cx.lineTo(ex-2, inAir?16:11); cx.stroke();
+    }
     cx.restore();
 
-    // Right wing — attached right side of body (bx+38, by-32)
+    // Right wing
     cx.save();
-    cx.translate(bx+38, by-34);
-    cx.rotate(inAir ? (0.9 + Math.sin(fr*0.15)*0.2) : (0.25 + wingFlap*0.5));
-    cx.fillStyle=iron?'rgba(90,120,160,0.8)':'rgba(45,45,85,0.75)';
-    const rwx = inAir ? 16 : 10, rwy = inAir ? 6 : 4;
-    cx.beginPath(); cx.ellipse(0,0,rwx,rwy,0,0,Math.PI*2); cx.fill();
-    cx.strokeStyle=iron?'rgba(110,140,180,0.5)':'rgba(60,60,105,0.6)'; cx.lineWidth=1.1;
-    for(let i=0;i<tips;i++){ cx.beginPath(); cx.moveTo(-rwx+i*(rwx*2/tips)+4, rwy-1); cx.lineTo(-rwx+i*(rwx*2/tips)+2, rwy+6); cx.stroke(); }
+    cx.translate(bx+38, by-30);
+    cx.rotate(0.3 + wingFlap*0.5 + wingOpen*0.5);
+    cx.fillStyle=iron?'#586878':'#1c1c2a';
+    cx.beginPath(); cx.ellipse(0,0, inAir?17:12, inAir?7:5, 0,0,Math.PI*2); cx.fill();
+    const wf2 = inAir?4:3;
+    for(let i=0;i<wf2;i++){
+      cx.strokeStyle=iron?'#c0d0e0':'#e8e8e8'; cx.lineWidth=2; cx.lineCap='round';
+      const ex=(-9+i*(18/wf2));
+      cx.beginPath(); cx.moveTo(ex, 3); cx.lineTo(ex-2, inAir?13:9); cx.stroke();
+    }
     cx.restore();
-    // Back spikes (iron: metal fins)
+
+    // Iron fins
     if(iron){
       cx.fillStyle='#78899a';
-      for(let i=0;i<4;i++){ cx.beginPath(); cx.moveTo(bx+8+i*6,by-52); cx.lineTo(bx+5+i*6,by-60); cx.lineTo(bx+11+i*6,by-52); cx.closePath(); cx.fill(); }
-    } else {
-      cx.fillStyle=B2;
-      [0,1,2,3].forEach(i=>{ cx.beginPath(); cx.moveTo(bx+8+i*6,by-52); cx.lineTo(bx+6+i*6,by-58+i); cx.lineTo(bx+11+i*6,by-52); cx.closePath(); cx.fill(); });
+      for(let i=0;i<4;i++){ cx.beginPath(); cx.moveTo(bx+8+i*6,by-48); cx.lineTo(bx+5+i*6,by-57); cx.lineTo(bx+11+i*6,by-48); cx.closePath(); cx.fill(); }
     }
-    // Neck
-    const ns=onG?Math.sin(run*0.25)*3:0;
-    cx.strokeStyle=N1; cx.lineWidth=11; cx.lineCap='round';
-    cx.beginPath(); cx.moveTo(bx+36,by-48); cx.bezierCurveTo(bx+42+ns,by-64,bx+44+ns,by-78,bx+40+ns,by-96); cx.stroke();
-    cx.strokeStyle=N2; cx.lineWidth=5;
-    cx.beginPath(); cx.moveTo(bx+37,by-48); cx.bezierCurveTo(bx+43+ns,by-63,bx+45+ns,by-77,bx+41+ns,by-95); cx.stroke();
-    // Head
-    const hx=bx+40+ns,hy=by-104;
-    cx.fillStyle=H1; cx.beginPath(); cx.ellipse(hx,hy,13,11,0.1,0,Math.PI*2); cx.fill();
-    cx.fillStyle=H2; cx.beginPath(); cx.ellipse(hx-3,hy-4,7,5,-0.3,0,Math.PI*2); cx.fill();
-    cx.fillStyle='#e8c050'; cx.beginPath(); cx.moveTo(hx+10,hy-2); cx.lineTo(hx+24,hy+1); cx.lineTo(hx+24,hy+4); cx.lineTo(hx+10,hy+5); cx.closePath(); cx.fill();
-    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(hx+3,hy-3,4.5,0,Math.PI*2); cx.fill();
-    cx.fillStyle='#1a1a2e'; cx.beginPath(); cx.arc(hx+4,hy-3,3,0,Math.PI*2); cx.fill();
-    cx.fillStyle='#5af'; cx.beginPath(); cx.arc(hx+4.5,hy-3.5,1.2,0,Math.PI*2); cx.fill();
-    cx.fillStyle='#fff'; cx.beginPath(); cx.arc(hx+5.5,hy-5,1,0,Math.PI*2); cx.fill();
-    // Iron armor
+
+    // --- Neck (skin colored, long) ---
+    cx.strokeStyle='#c47a50'; cx.lineWidth=13; cx.lineCap='round';
+    cx.beginPath(); cx.moveTo(bx+26,by-44); cx.bezierCurveTo(bx+30+ns,by-60,bx+34+ns,by-78,bx+32+ns,by-98); cx.stroke();
+    cx.strokeStyle='#d4956a'; cx.lineWidth=9;
+    cx.beginPath(); cx.moveTo(bx+26,by-44); cx.bezierCurveTo(bx+30+ns,by-60,bx+34+ns,by-78,bx+32+ns,by-98); cx.stroke();
+    cx.strokeStyle='#e8b08a'; cx.lineWidth=4;
+    cx.beginPath(); cx.moveTo(bx+27,by-44); cx.bezierCurveTo(bx+31+ns,by-60,bx+35+ns,by-77,bx+33+ns,by-97); cx.stroke();
+
+    // --- Head ---
+    const hx=bx+32+ns, hy=by-108;
+    // Head base skin
+    cx.fillStyle='#d4956a';
+    cx.beginPath(); cx.ellipse(hx,hy,14,12,0.05,0,Math.PI*2); cx.fill();
+    // Lighter face
+    cx.fillStyle='#e8b08a';
+    cx.beginPath(); cx.ellipse(hx-2,hy-2,9,8,-0.1,0,Math.PI*2); cx.fill();
+    // Fluffy head crest
+    cx.fillStyle='#c47a50';
+    for(let f=0;f<4;f++){
+      cx.beginPath(); cx.ellipse(hx-5+f*3.5,hy-12,3,5,-0.1+f*0.15,0,Math.PI*2); cx.fill();
+    }
+    // Cheek blush
+    cx.fillStyle='rgba(220,140,120,0.4)';
+    cx.beginPath(); cx.ellipse(hx+6,hy+2,5,3,0,0,Math.PI*2); cx.fill();
+    // Beak (upper)
+    cx.fillStyle='#e07820';
+    cx.beginPath(); cx.moveTo(hx+10,hy-3); cx.lineTo(hx+26,hy+1); cx.lineTo(hx+12,hy+2); cx.closePath(); cx.fill();
+    // Beak (lower, open slightly)
+    cx.fillStyle='#c05a10';
+    cx.beginPath(); cx.moveTo(hx+11,hy+2); cx.lineTo(hx+24,hy+3); cx.lineTo(hx+12,hy+6); cx.closePath(); cx.fill();
+    // Mouth inside
+    cx.fillStyle='#a03010';
+    cx.beginPath(); cx.ellipse(hx+17,hy+2,6,2,0,0,Math.PI*2); cx.fill();
+    // Big eye (white sclera)
+    cx.fillStyle='#fff';
+    cx.beginPath(); cx.arc(hx+1,hy-4,6,0,Math.PI*2); cx.fill();
+    // Iris blue
+    cx.fillStyle='#2a80d0';
+    cx.beginPath(); cx.arc(hx+1.5,hy-4,4,0,Math.PI*2); cx.fill();
+    // Pupil
+    cx.fillStyle='#0a0a18';
+    cx.beginPath(); cx.arc(hx+2,hy-4,2,0,Math.PI*2); cx.fill();
+    // Eye shine
+    cx.fillStyle='#fff';
+    cx.beginPath(); cx.arc(hx+3,hy-5.5,1.3,0,Math.PI*2); cx.fill();
+    cx.beginPath(); cx.arc(hx+0.5,hy-3,0.7,0,Math.PI*2); cx.fill();
+    // Eyelashes (top)
+    cx.strokeStyle='#1a1a28'; cx.lineWidth=1.2; cx.lineCap='round';
+    for(let l=0;l<4;l++){
+      const la2=(-0.6+l*0.4);
+      cx.beginPath();
+      cx.moveTo(hx+1+Math.cos(la2-Math.PI/2)*6, hy-4+Math.sin(la2-Math.PI/2)*6);
+      cx.lineTo(hx+1+Math.cos(la2-Math.PI/2)*9, hy-4+Math.sin(la2-Math.PI/2)*9);
+      cx.stroke();
+    }
+
+    // Iron armor overlay
     if(iron){
-      cx.fillStyle='rgba(80,100,140,0.8)'; cx.beginPath(); cx.ellipse(bx+16,by-46,12,8,-0.3,0,Math.PI*2); cx.fill();
-      cx.fillStyle='rgba(90,110,150,0.75)'; cx.fillRect(bx+6,by-44,22,16);
-      cx.strokeStyle='rgba(140,170,210,0.6)'; cx.lineWidth=1; cx.strokeRect(bx+8,by-42,18,12);
+      cx.fillStyle='rgba(80,100,140,0.8)'; cx.beginPath(); cx.ellipse(bx+18,by-42,12,8,-0.3,0,Math.PI*2); cx.fill();
+      cx.fillStyle='rgba(90,110,150,0.75)'; cx.fillRect(bx+6,by-40,22,14);
+      cx.strokeStyle='rgba(140,170,210,0.6)'; cx.lineWidth=1; cx.strokeRect(bx+8,by-38,18,10);
     }
-    // 2 legs only — spaced wider, opposite phase
-    const la  = onG ?  Math.sin(run * 0.28) * 0.55 : -0.15;
-    const la2 = onG ? -Math.sin(run * 0.28) * 0.55 :  0.15;
-    drawLeg(bx + 12, by, la,  false);
-    drawLeg(bx + 30, by, la2, false);
   }
+
   cx.restore();
 }
 
 function px(x,y,w,h,c){ cx.fillStyle=c; cx.fillRect(x,y,w,h); }
 
-function drawLeg(x, groundY, angle, isDuck){
-  const thighLen = isDuck ? 16 : 22;
-  const shinLen  = isDuck ? 14 : 20;
-  const legCol   = bird.ironBird ? '#7090b0' : '#c8a060';
-  const legHigh  = bird.ironBird ? '#90b0d0' : '#e8c080';
-  const footCol  = bird.ironBird ? '#506080' : '#8b6020';
+function drawOstrichLeg(x, groundY, angle, isDuck){
+  const thighLen = isDuck ? 15 : 22;
+  const shinLen  = isDuck ? 13 : 20;
+  // Ostrich legs are orange/skin colored
+  const legCol  = bird.ironBird ? '#7090b0' : '#d4783a';
+  const legDark = bird.ironBird ? '#506080' : '#b05820';
+  const footCol = bird.ironBird ? '#506080' : '#c06020';
+  const scaleCol= bird.ironBird ? '#608090' : '#e09050';
 
-  // Hip attaches at bottom of body, not at ground
-  const hipY = groundY - (isDuck ? 18 : 14);
+  const hipY = groundY - (isDuck ? 18 : 16);
   const kneeX = x + Math.sin(angle) * thighLen;
   const kneeY = hipY + thighLen * Math.cos(Math.abs(angle));
 
-  // Shin
-  const shinAngle = angle * 0.5 + 0.5;
+  const shinAngle = angle * 0.55 + 0.45;
   const footX = kneeX + Math.sin(shinAngle) * shinLen;
-  const footY = Math.min(groundY, kneeY + shinLen * Math.cos(Math.abs(shinAngle) * 0.6));
+  const footY = Math.min(groundY, kneeY + shinLen * Math.cos(Math.abs(shinAngle)*0.65));
 
-  // Draw thigh
-  cx.strokeStyle = legCol; cx.lineWidth = isDuck ? 6 : 7; cx.lineCap = 'round';
-  cx.beginPath(); cx.moveTo(x, hipY); cx.lineTo(kneeX, kneeY); cx.stroke();
-  cx.strokeStyle = legHigh; cx.lineWidth = isDuck ? 3 : 4;
-  cx.beginPath(); cx.moveTo(x, hipY); cx.lineTo(kneeX, kneeY); cx.stroke();
+  // Thigh — thick
+  cx.strokeStyle=legDark; cx.lineWidth=isDuck?7:8; cx.lineCap='round';
+  cx.beginPath(); cx.moveTo(x,hipY); cx.lineTo(kneeX,kneeY); cx.stroke();
+  cx.strokeStyle=legCol; cx.lineWidth=isDuck?5:6;
+  cx.beginPath(); cx.moveTo(x,hipY); cx.lineTo(kneeX,kneeY); cx.stroke();
+  // Scale marks on thigh
+  cx.strokeStyle=scaleCol; cx.lineWidth=0.8;
+  for(let s=1;s<3;s++){
+    const sx=x+(kneeX-x)*s/3, sy=hipY+(kneeY-hipY)*s/3;
+    cx.beginPath(); cx.moveTo(sx-3,sy); cx.lineTo(sx+3,sy); cx.stroke();
+  }
 
-  // Draw shin
-  cx.strokeStyle = legCol; cx.lineWidth = isDuck ? 5 : 6;
-  cx.beginPath(); cx.moveTo(kneeX, kneeY); cx.lineTo(footX, footY); cx.stroke();
+  // Shin — slightly thinner
+  cx.strokeStyle=legDark; cx.lineWidth=isDuck?6:7;
+  cx.beginPath(); cx.moveTo(kneeX,kneeY); cx.lineTo(footX,footY); cx.stroke();
+  cx.strokeStyle=legCol; cx.lineWidth=isDuck?4:5;
+  cx.beginPath(); cx.moveTo(kneeX,kneeY); cx.lineTo(footX,footY); cx.stroke();
 
-  // Foot when on ground
-  if(footY >= groundY - 4){
-    cx.fillStyle = footCol;
-    cx.beginPath();
-    cx.moveTo(footX - 7, groundY);
-    cx.lineTo(footX + 11, groundY - 2);
-    cx.lineTo(footX + 13, groundY + 2);
-    cx.lineTo(footX - 5, groundY + 2);
-    cx.closePath(); cx.fill();
-    cx.strokeStyle = bird.ironBird ? '#304060' : '#5a3a10';
-    cx.lineWidth = 1.5;
-    for(let t = 0; t < 2; t++){
-      cx.beginPath();
-      cx.moveTo(footX + 9 - t*5, groundY - 1);
-      cx.lineTo(footX + 13 - t*5, groundY + 2);
-      cx.stroke();
-    }
+  // Knee bump
+  cx.fillStyle=legCol;
+  cx.beginPath(); cx.arc(kneeX,kneeY,isDuck?4:5,0,Math.PI*2); cx.fill();
+  cx.fillStyle=legDark;
+  cx.beginPath(); cx.arc(kneeX,kneeY,isDuck?2.5:3,0,Math.PI*2); cx.fill();
+
+  // Foot & toes when on ground
+  if(footY >= groundY - 5){
+    cx.fillStyle=footCol;
+    // Main foot pad
+    cx.beginPath(); cx.ellipse(footX, groundY, 8, 4, 0.1, 0, Math.PI*2); cx.fill();
+    // 3 forward toes
+    cx.strokeStyle=footCol; cx.lineWidth=4; cx.lineCap='round';
+    cx.beginPath(); cx.moveTo(footX-2,groundY); cx.lineTo(footX+12,groundY-2); cx.stroke();
+    cx.beginPath(); cx.moveTo(footX-2,groundY); cx.lineTo(footX+10,groundY+3); cx.stroke();
+    cx.beginPath(); cx.moveTo(footX-2,groundY); cx.lineTo(footX+7, groundY-5); cx.stroke();
+    // Toe nails
+    cx.fillStyle=legDark;
+    cx.beginPath(); cx.arc(footX+12,groundY-2,2,0,Math.PI*2); cx.fill();
+    cx.beginPath(); cx.arc(footX+10,groundY+3,2,0,Math.PI*2); cx.fill();
+    cx.beginPath(); cx.arc(footX+7, groundY-5,2,0,Math.PI*2); cx.fill();
   }
 }
 
