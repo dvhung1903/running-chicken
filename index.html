@@ -420,17 +420,21 @@ const UG_LEN  = 1200;     // px chiều dài hầm (tương ứng ~20đ)
 // ═══════════════════════════════════════════
 // AUDIO ENGINE
 // ═══════════════════════════════════════════
-const AC = new (window.AudioContext||window.webkitAudioContext)();
-let muted = false;
-function resumeAC(){ if(AC.state==='suspended') AC.resume(); }
+let AC = null;
+function getAC(){
+  if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
+  return AC;
+}
+function resumeAC(){ if(AC && AC.state==='suspended') AC.resume(); }
 
 function osc(type,freq,atk,sus,rel,vol,fEnd){
   if(muted) return;
-  const o=AC.createOscillator(),g=AC.createGain();
-  o.connect(g);g.connect(AC.destination);
+  const ac=getAC();
+  const o=ac.createOscillator(),g=ac.createGain();
+  o.connect(g);g.connect(ac.destination);
   o.type=type; o.frequency.value=freq;
-  if(fEnd) o.frequency.exponentialRampToValueAtTime(fEnd,AC.currentTime+atk+sus);
-  const t=AC.currentTime;
+  if(fEnd) o.frequency.exponentialRampToValueAtTime(fEnd,ac.currentTime+atk+sus);
+  const t=ac.currentTime;
   g.gain.setValueAtTime(0,t);
   g.gain.linearRampToValueAtTime(vol,t+atk);
   g.gain.setValueAtTime(vol,t+atk+sus);
@@ -439,16 +443,17 @@ function osc(type,freq,atk,sus,rel,vol,fEnd){
 }
 function nz(dur,vol,hp){
   if(muted) return;
-  const buf=AC.createBuffer(1,AC.sampleRate*dur,AC.sampleRate);
+  const ac=getAC();
+  const buf=ac.createBuffer(1,ac.sampleRate*dur,ac.sampleRate);
   const d=buf.getChannelData(0);
   for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
-  const src=AC.createBufferSource(); src.buffer=buf;
-  const g=AC.createGain();
-  g.gain.setValueAtTime(vol,AC.currentTime);
-  g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+dur);
-  if(hp){const f=AC.createBiquadFilter();f.type='highpass';f.frequency.value=hp;src.connect(f);f.connect(g);}
+  const src=ac.createBufferSource(); src.buffer=buf;
+  const g=ac.createGain();
+  g.gain.setValueAtTime(vol,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.0001,ac.currentTime+dur);
+  if(hp){const f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=hp;src.connect(f);f.connect(g);}
   else src.connect(g);
-  g.connect(AC.destination);src.start();src.stop(AC.currentTime+dur+0.01);
+  g.connect(ac.destination);src.start();src.stop(ac.currentTime+dur+0.01);
 }
 
 const snd={
@@ -468,8 +473,9 @@ let bgBeat=0, bgTimer=null, bgOn=false;
 const PENTA=[261.6,293.7,329.6,392,440,523.3,587.3,659.3];
 function bgTick(){
   if(!bgOn||muted) return;
+  const ac=getAC();
   const bpm=Math.min(168,120+Math.floor(sm*14)), ms=60000/bpm;
-  if(bgBeat%2===0){const o=AC.createOscillator(),g=AC.createGain();o.connect(g);g.connect(AC.destination);o.type='sine';const t=AC.currentTime;o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(38,t+0.18);g.gain.setValueAtTime(0.26,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.22);o.start(t);o.stop(t+0.24);}
+  if(bgBeat%2===0){const o=ac.createOscillator(),g=ac.createGain();o.connect(g);g.connect(ac.destination);o.type='sine';const t=ac.currentTime;o.frequency.setValueAtTime(130,t);o.frequency.exponentialRampToValueAtTime(38,t+0.18);g.gain.setValueAtTime(0.26,t);g.gain.exponentialRampToValueAtTime(0.0001,t+0.22);o.start(t);o.stop(t+0.24);}
   if(bgBeat%4===2) nz(0.12,0.12,2000);
   nz(0.05,bgBeat%2===0?0.07:0.04,9000);
   if(bgBeat%4===0) osc('sawtooth',82,0.01,0.12,0.08,0.1);
