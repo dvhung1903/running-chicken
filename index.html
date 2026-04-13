@@ -421,6 +421,7 @@ const UG_LEN  = 1200;     // px chiều dài hầm (tương ứng ~20đ)
 // AUDIO ENGINE
 // ═══════════════════════════════════════════
 let AC = null;
+let muted = false;
 function getAC(){
   if(!AC) AC = new (window.AudioContext||window.webkitAudioContext)();
   return AC;
@@ -531,7 +532,7 @@ let announce=null; // { text, timer, color }
 function init(){
   sc=0; fr=0; sm=1; spd=5;
   bird={x:OX,y:GY,vy:0,duck:false,duckCount:0,duckCooldown:0,run:0,underground:false,armor:false,armorTimer:0,armorFlash:0,ironBird:false,beak:false,beakTimer:0};
-  obs=[]; coins=[]; parts=[]; tunnel=null; lastTunnelScore=0; announce=null;
+  obs=[]; coins=[]; parts=[]; tunnel=null; lastTunnelScore=0; announce=null; warning=null;
   clouds=[]; for(let i=0;i<5;i++) clouds.push(mkCloud(Math.random()*CW));
   ground=[]; for(let i=0;i<20;i++) ground.push(mkGrass(i*65));
   // Reset pause
@@ -642,10 +643,12 @@ function hitCoin(c){
 // ═══════════════════════════════════════════
 function jump(){
   if(st!=='running'){
+    // Đóng menu nếu đang mở
+    document.querySelectorAll('.page-screen').forEach(s=>s.classList.remove('show'));
     if(!playerName){ showNameModal(); return; }
     init(); startBg(); return;
   }
-  if(bird.underground) return; // không nhảy trong hầm
+  if(bird.underground) return;
   const gy = GY;
   if(bird.y >= gy-1 && !bird.duck){ bird.vy=JUMP_V; snd.jump(); }
 }
@@ -1927,6 +1930,8 @@ function resumeFromMenu(){
     init(); startBg();
   } else if(paused){
     resumeGame();
+  } else if(st==='running'){
+    // already running, just close menu
   }
 }
 
@@ -1936,10 +1941,12 @@ for(let i=0;i<20;i++) ground.push(mkGrass(i*62));
 // Load saved player name
 const _saved = loadPlayer();
 if(_saved) playerName = _saved;
-// Init banner ads immediately
+// Init banner ads
 initBannerAds();
-// Show menu on first load
-setTimeout(showMenu, 100);
+// Start: show name modal if no name, else go straight to game
+if(!playerName){
+  setTimeout(showNameModal, 200);
+}
 loop();
 </script>
 </body>
